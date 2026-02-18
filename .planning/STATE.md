@@ -4,7 +4,7 @@
 - **Phase:** 03-git-layer (executing)
 - **Milestone:** 1 (MVP)
 - **Last updated:** 2026-02-18
-- **Stopped At:** Completed 03-04-PLAN.md (AsyncGit wired in main.rs, keybindings, status bar); next: Phase 3 Plan 05
+- **Stopped At:** Completed quick-2-PLAN.md (silent git worker errors, accurate help overlay); next: Phase 3 Plan 05
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -83,12 +83,15 @@ Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 05.
 - git2::Repository::discover('.') from cwd — graceful None if no repo found; diff panel shows "No diff loaded" placeholder without code path changes
 - Tab key cycles DiffMode globally (not scoped to FileList focus) so users can switch diff modes from any panel
 - Status bar DiffMode label uses Color::DarkGray; loading indicator uses Color::Yellow for visual prominence
+- eprintln! removed entirely from git worker — no replacement logging added; empty payload is the correct graceful degradation signal for a TUI where stderr is the terminal backend
+- Help overlay reflects only wired keybindings — placeholder descriptions removed as soon as features ship
 
 ### Quick Tasks Completed
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 1 | automated self-verification before human checkpoint and theme system for airev | 2026-02-18 | 153858c | [1-automated-self-verification-before-human](./quick/1-automated-self-verification-before-human/) |
+| 2 | fix status bar error spam from git worker; update help overlay keybindings | 2026-02-18 | 1aba9e2 | [2-fix-status-bar-error-spam-from-git-worke](./quick/2-fix-status-bar-error-spam-from-git-worke/) |
 
 ## Performance Metrics
 | Phase | Plan | Duration | Tasks | Files |
@@ -104,4 +107,5 @@ Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 05.
 | 03-git-layer | 02 | 5min | 3 | 4 |
 | 03-git-layer | 03 | 2min | 2 | 4 |
 | 03-git-layer | 04 | 2min | 2 | 4 |
+| quick | 02 | 2min | 2 | 2 |
 
