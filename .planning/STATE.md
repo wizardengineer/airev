@@ -4,7 +4,7 @@
 - **Phase:** 03-git-layer (executing)
 - **Milestone:** 1 (MVP)
 - **Last updated:** 2026-02-18
-- **Stopped At:** Completed 03-02-PLAN.md (AsyncGit worker thread + AppState Phase 3 fields); next: Phase 3 Plan 03
+- **Stopped At:** Completed 03-03-PLAN.md (diff_view.rs + file_tree.rs render modules); next: Phase 3 Plan 04
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -21,16 +21,17 @@
 - [x] Phase 2, Plan 03: main.rs wiring (handle_key in AppEvent::Key arm) + human verification of full interactive TUI
 - [x] Phase 3, Plan 01: Cargo deps (git2/crossbeam-channel/syntect/syntect-tui/similar) + owned git types (OwnedDiffHunk, OwnedDiffLine, FileSummary, DiffMode, GitRequest, GitResultPayload) + AppEvent::GitResult(Box<GitResultPayload>)
 - [x] Phase 3, Plan 02: AsyncGit worker thread (git_worker_loop, 4 diff modes, syntect highlighting, word-level diff via similar) + AppState Phase 3 fields (diff_lines, diff_scroll: usize, file_summaries, diff_mode, diff_loading, hunk_offsets, selected_file_index, hunk_cursor)
+- [x] Phase 3, Plan 03: ui/diff_view.rs (render_diff with List virtual scroll) + ui/file_tree.rs (render_file_list with FileSummary badges) + ui/mod.rs updated; placeholder builders removed
 
 ## Next Step
-Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 03.
+Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 04.
 
 ## Phase Progress
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Foundation | in-progress (3/4 plans done) |
 | 2 | Rendering Skeleton | complete (3/3 plans done) |
-| 3 | Git Layer | in-progress (2/5 plans done) |
+| 3 | Git Layer | in-progress (3/5 plans done) |
 | 4 | Persistence Layer | pending |
 | 5 | Comment UI | pending |
 | 6 | Live File Watcher | pending |
@@ -73,6 +74,9 @@ Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 03.
 - RefCell used in extract_hunks to share hunks Vec between two diff.foreach closures without unsafe — git2 guarantees sequential execution on same thread
 - Custom syntect_to_span replaces into_span to resolve ratatui::style::Style vs ratatui::prelude::Style type split in syntect-tui 3.0 / ratatui 0.30
 - diff_scroll: u16 → usize in AppState; ui/mod.rs temporary as u16 cast for Paragraph::scroll until Plan 03 introduces List widget
+- List widget with manual slice replaces Paragraph::scroll for diff panel — eliminates usize→u16 cast and enables O(viewport) rendering for 5000+ line diffs
+- render_file_list takes &mut AppState (for ListState) while render_diff takes &AppState — asymmetric mutability matches ratatui render_stateful_widget requirement
+- Comments panel kept as minimal Paragraph placeholder in mod.rs — Phase 5 is the right time to introduce a comments module when real data is wired
 
 ### Quick Tasks Completed
 
@@ -92,4 +96,5 @@ Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 03.
 | 02-rendering-skeleton | 03 | 20min | 2 | 1 |
 | 03-git-layer | 01 | 3min | 2 | 7 |
 | 03-git-layer | 02 | 5min | 3 | 4 |
+| 03-git-layer | 03 | 2min | 2 | 4 |
 
