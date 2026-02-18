@@ -101,6 +101,29 @@ async fn main() -> std::io::Result<()> {
         .await
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
+    // Step 6: detect git repository and spawn AsyncGit background thread.
+    // Walk parent directories from cwd. If no repo found, diff panel shows placeholder.
+    let maybe_repo_path: Option<String> = git2::Repository::discover(".")
+        .ok()
+        .and_then(|r| {
+            r.workdir()
+                .or_else(|| Some(r.path()))
+                .map(|p| p.to_string_lossy().into_owned())
+        });
+
+    let maybe_git: Option<crate::git::AsyncGit> = maybe_repo_path.map(|path| {
+        let git = crate::git::AsyncGit::new(handler.tx.clone(), path);
+        // Send the initial diff request immediately so the panel populates at startup.
+        state.diff_loading = true;
+        git.load_diff(crate::git::types::GitRequest::LoadDiff(
+            crate::git::types::DiffMode::Unstaged,
+        ));
+        git
+    });
+
+    // Store the request sender in AppState so keybindings.rs can send requests.
+    state.git_tx = maybe_git.as_ref().map(|g| g.request_tx.clone());
+
     // Event loop — exits only via `break`, never via `?`.
     // This guarantees `restore_tui()` is always reached after the loop.
     'event_loop: loop {
@@ -129,6 +152,11 @@ async fn main() -> std::io::Result<()> {
                     Some(event::AppEvent::Resize(_, _)) => {
                         // Force an immediate redraw after a terminal resize so the new
                         // layout is computed without waiting for the next 100ms tick.
+                        handler.tx.send(event::AppEvent::Render).ok();
+                    }
+                    Some(event::AppEvent::GitResult(payload)) => {
+                        state.apply_git_result(*payload);
+                        // Trigger immediate redraw after diff data arrives.
                         handler.tx.send(event::AppEvent::Render).ok();
                     }
                     Some(event::AppEvent::Quit) | None => break 'event_loop,

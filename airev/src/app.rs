@@ -5,9 +5,10 @@
 //! unsaved-comment guard flag. No ratatui rendering logic lives here — `app.rs` is
 //! pure state that is read by the render module and mutated by the keybinding dispatcher.
 
+use crossbeam_channel::Sender;
 use ratatui::widgets::ListState;
 
-use crate::git::types::{DiffMode, FileSummary};
+use crate::git::types::{DiffMode, FileSummary, GitRequest};
 
 /// Editor mode controlling which keybinding set is active.
 ///
@@ -119,6 +120,11 @@ pub struct AppState {
     pub selected_file_index: usize,
     /// Current hunk offset cursor index (index into hunk_offsets, not line number).
     pub hunk_cursor: usize,
+
+    /// Channel sender to the git background thread, for keybinding-driven requests.
+    ///
+    /// `None` when no git repository was detected at startup (graceful no-repo mode).
+    pub git_tx: Option<Sender<GitRequest>>,
 }
 
 impl Default for AppState {
@@ -147,6 +153,7 @@ impl Default for AppState {
             hunk_offsets: Vec::new(),
             selected_file_index: 0,
             hunk_cursor: 0,
+            git_tx: None,
         }
     }
 }
