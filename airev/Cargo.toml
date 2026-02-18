@@ -10,3 +10,5 @@ tokio = { workspace = true }
 signal-hook = { workspace = true }
 futures = { workspace = true }
 airev-core = { workspace = true }
+serde = { workspace = true }
+toml = { workspace = true }

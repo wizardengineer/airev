@@ -11,3 +11,5 @@ tokio-rusqlite = "0.7"
 signal-hook = "0.3"
 futures = "0.3"
 airev-core = { path = "airev-core" }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"

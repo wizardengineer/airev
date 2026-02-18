@@ -1,17 +1,18 @@
 //! airev — AI-assisted code review TUI.
 //!
 //! Entry point for the `airev` binary. Wires together the terminal lifecycle
-//! (`tui`), unified event bus (`event`), placeholder UI (`ui`), and the shared
-//! WAL-mode SQLite database (`airev-core`).
+//! (`tui`), unified event bus (`event`), placeholder UI (`ui`), theme system
+//! (`theme`), and the shared WAL-mode SQLite database (`airev-core`).
 //!
 //! # Startup sequence (order matters — see RESEARCH.md Pitfall 6)
 //!
-//! 1. `install_panic_hook()` — installed first so it is the innermost hook.
+//! 1. Load theme from XDG config — read-only, safe before terminal init.
+//! 2. `install_panic_hook()` — installed first so it is the innermost hook.
 //!    Restores the terminal before the panic message prints.
-//! 2. `register_sigterm()` — returns `Arc<AtomicBool>` polled in the event loop.
-//! 3. `init_tui()` — enters alternate screen and enables raw mode.
-//! 4. Create event channel and `spawn_event_task()`.
-//! 5. `create_dir_all(".airev")` + `open_db()` — DB opened before first frame
+//! 3. `register_sigterm()` — returns `Arc<AtomicBool>` polled in the event loop.
+//! 4. `init_tui()` — enters alternate screen and enables raw mode.
+//! 5. Create event channel and `spawn_event_task()`.
+//! 6. `create_dir_all(".airev")` + `open_db()` — DB opened before first frame
 //!    so there is no "loading" state to manage.
 //!
 //! # Safety
@@ -22,13 +23,58 @@
 //! and reach `restore_tui()` after `break`. The panic hook covers unexpected panics.
 
 mod event;
+mod theme;
 mod tui;
 mod ui;
 
 use std::sync::atomic::Ordering;
 
+/// Returns the path to the airev config file.
+///
+/// Prefers `$XDG_CONFIG_HOME/airev/config.toml`; falls back to
+/// `~/.config/airev/config.toml` when the env var is absent.
+fn config_path() -> std::path::PathBuf {
+    let base = std::env::var("XDG_CONFIG_HOME")
+        .ok()
+        .map(std::path::PathBuf::from)
+        .or_else(|| {
+            std::env::var("HOME")
+                .ok()
+                .map(|h| std::path::PathBuf::from(h).join(".config"))
+        })
+        .unwrap_or_else(|| std::path::PathBuf::from(".config"));
+    base.join("airev").join("config.toml")
+}
+
+/// Loads the theme name from `~/.config/airev/config.toml`.
+///
+/// Returns `"dark"` if the file does not exist, cannot be parsed, or has no
+/// `theme` key. Never panics — config errors are soft failures printed to stderr.
+fn load_theme_name() -> String {
+    let path = config_path();
+    let raw = match std::fs::read_to_string(&path) {
+        Ok(s) => s,
+        Err(_) => return "dark".to_owned(),
+    };
+    let table: toml::Table = match toml::from_str(&raw) {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("airev: config parse error in {:?}: {}", path, e);
+            return "dark".to_owned();
+        }
+    };
+    table
+        .get("theme")
+        .and_then(|v| v.as_str())
+        .unwrap_or("dark")
+        .to_owned()
+}
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    // Step 0: load theme from config — read-only, safe before terminal init.
+    let theme = theme::Theme::from_name(&load_theme_name());
+
     // Step 1: panic hook installed first — innermost hook restores terminal.
     tui::install_panic_hook();
 
@@ -67,7 +113,7 @@ async fn main() -> std::io::Result<()> {
                 match maybe_event {
                     Some(event::AppEvent::Render) => {
                         // Exactly one draw() call per Render event — never elsewhere.
-                        terminal.draw(|frame| ui::render(frame))?;
+                        terminal.draw(|frame| ui::render(frame, &theme))?;
                     }
                     Some(event::AppEvent::Key(key)) => {
                         use crossterm::event::KeyCode;
