@@ -4,7 +4,7 @@
 - **Phase:** 03-git-layer (executing)
 - **Milestone:** 1 (MVP)
 - **Last updated:** 2026-02-18
-- **Stopped At:** Completed 03-03-PLAN.md (diff_view.rs + file_tree.rs render modules); next: Phase 3 Plan 04
+- **Stopped At:** Completed 03-04-PLAN.md (AsyncGit wired in main.rs, keybindings, status bar); next: Phase 3 Plan 05
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -22,16 +22,17 @@
 - [x] Phase 3, Plan 01: Cargo deps (git2/crossbeam-channel/syntect/syntect-tui/similar) + owned git types (OwnedDiffHunk, OwnedDiffLine, FileSummary, DiffMode, GitRequest, GitResultPayload) + AppEvent::GitResult(Box<GitResultPayload>)
 - [x] Phase 3, Plan 02: AsyncGit worker thread (git_worker_loop, 4 diff modes, syntect highlighting, word-level diff via similar) + AppState Phase 3 fields (diff_lines, diff_scroll: usize, file_summaries, diff_mode, diff_loading, hunk_offsets, selected_file_index, hunk_cursor)
 - [x] Phase 3, Plan 03: ui/diff_view.rs (render_diff with List virtual scroll) + ui/file_tree.rs (render_file_list with FileSummary badges) + ui/mod.rs updated; placeholder builders removed
+- [x] Phase 3, Plan 04: AsyncGit wired at startup with git repo detection; AppEvent::GitResult arm; Tab diff mode cycle; Enter/l file-list jump; status bar DiffMode label + loading indicator
 
 ## Next Step
-Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 04.
+Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 05.
 
 ## Phase Progress
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Foundation | in-progress (3/4 plans done) |
 | 2 | Rendering Skeleton | complete (3/3 plans done) |
-| 3 | Git Layer | in-progress (3/5 plans done) |
+| 3 | Git Layer | in-progress (4/5 plans done) |
 | 4 | Persistence Layer | pending |
 | 5 | Comment UI | pending |
 | 6 | Live File Watcher | pending |
@@ -77,6 +78,11 @@ Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 04.
 - List widget with manual slice replaces Paragraph::scroll for diff panel — eliminates usize→u16 cast and enables O(viewport) rendering for 5000+ line diffs
 - render_file_list takes &mut AppState (for ListState) while render_diff takes &AppState — asymmetric mutability matches ratatui render_stateful_widget requirement
 - Comments panel kept as minimal Paragraph placeholder in mod.rs — Phase 5 is the right time to introduce a comments module when real data is wired
+- git_tx stored in AppState (Option<Sender<GitRequest>>) so keybindings.rs can send diff mode requests without adding a parameter to handle_key()
+- handle_file_list_key() extracted as private helper from handle_normal() to stay under 50 lines per function limit
+- git2::Repository::discover('.') from cwd — graceful None if no repo found; diff panel shows "No diff loaded" placeholder without code path changes
+- Tab key cycles DiffMode globally (not scoped to FileList focus) so users can switch diff modes from any panel
+- Status bar DiffMode label uses Color::DarkGray; loading indicator uses Color::Yellow for visual prominence
 
 ### Quick Tasks Completed
 
@@ -97,4 +103,5 @@ Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 04.
 | 03-git-layer | 01 | 3min | 2 | 7 |
 | 03-git-layer | 02 | 5min | 3 | 4 |
 | 03-git-layer | 03 | 2min | 2 | 4 |
+| 03-git-layer | 04 | 2min | 2 | 4 |
 
