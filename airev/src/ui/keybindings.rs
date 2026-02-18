@@ -7,7 +7,8 @@
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::app::{AppState, Mode};
+use crate::app::{AppState, Mode, PanelFocus};
+use crate::git::types::{DiffMode, GitRequest};
 
 /// Control-flow signal returned from the key dispatcher.
 ///
@@ -46,8 +47,9 @@ pub fn handle_key(key: KeyEvent, state: &mut AppState) -> KeyAction {
 
 /// Handles a key event while in Normal mode.
 ///
-/// Delegates scroll keys to `handle_scroll_key` and handles focus, panel
-/// resize, file/hunk navigation, and mode transitions inline.
+/// Delegates scroll keys to `handle_scroll_key`, file-list-specific keys to
+/// `handle_file_list_key`, and handles focus, panel resize, hunk navigation,
+/// and mode transitions inline.
 ///
 /// # Arguments
 ///
@@ -56,6 +58,10 @@ pub fn handle_key(key: KeyEvent, state: &mut AppState) -> KeyAction {
 fn handle_normal(key: KeyEvent, state: &mut AppState) -> KeyAction {
     // Try scroll keys first (j/k/g/G/Ctrl-d/u/f/b).
     if let Some(action) = handle_scroll_key(key, state) {
+        return action;
+    }
+    // Try file-list-specific keys (Enter, l, Tab) when focused on the file list.
+    if let Some(action) = handle_file_list_key(key, state) {
         return action;
     }
 
@@ -71,40 +77,19 @@ fn handle_normal(key: KeyEvent, state: &mut AppState) -> KeyAction {
         }
 
         // File list navigation
-        KeyCode::Char('{') => {
-            state.prev_file();
-            KeyAction::Continue
-        }
-        KeyCode::Char('}') => {
-            state.next_file();
-            KeyAction::Continue
-        }
+        KeyCode::Char('{') => { state.prev_file(); KeyAction::Continue }
+        KeyCode::Char('}') => { state.next_file(); KeyAction::Continue }
 
-        // Hunk navigation (placeholder — Phase 3 wires real hunks)
-        KeyCode::Char('[') => {
-            state.prev_hunk();
-            KeyAction::Continue
-        }
-        KeyCode::Char(']') => {
-            state.next_hunk();
-            KeyAction::Continue
-        }
+        // Hunk navigation — calls real AppState methods wired in Phase 3 Plan 02.
+        KeyCode::Char('[') => { state.prev_hunk(); KeyAction::Continue }
+        KeyCode::Char(']') => { state.next_hunk(); KeyAction::Continue }
 
         // Diff panel resize
-        KeyCode::Char('<') => {
-            state.shrink_diff_panel();
-            KeyAction::Continue
-        }
-        KeyCode::Char('>') => {
-            state.grow_diff_panel();
-            KeyAction::Continue
-        }
+        KeyCode::Char('<') => { state.shrink_diff_panel(); KeyAction::Continue }
+        KeyCode::Char('>') => { state.grow_diff_panel(); KeyAction::Continue }
 
         // Help overlay
-        KeyCode::Char('?') => {
-            state.mode = Mode::HelpOverlay;
-            KeyAction::Continue
-        }
+        KeyCode::Char('?') => { state.mode = Mode::HelpOverlay; KeyAction::Continue }
 
         // Quit / confirm-quit
         KeyCode::Char('q') | KeyCode::Esc => {
@@ -117,6 +102,45 @@ fn handle_normal(key: KeyEvent, state: &mut AppState) -> KeyAction {
         }
 
         _ => KeyAction::Continue,
+    }
+}
+
+/// Handles file-list-specific keys in Normal mode: Enter, l (jump), Tab (mode cycle).
+///
+/// Returns `Some(KeyAction)` when the key was consumed, `None` when the key
+/// should fall through to the rest of the Normal handler.
+///
+/// # Arguments
+///
+/// * `key`   — the raw crossterm key event
+/// * `state` — mutable reference to all UI state
+fn handle_file_list_key(key: KeyEvent, state: &mut AppState) -> Option<KeyAction> {
+    match key.code {
+        // Enter and l both jump to the selected file when the file list is focused.
+        KeyCode::Enter
+        | KeyCode::Char('l') if state.focus == PanelFocus::FileList => {
+            state.jump_to_selected_file();
+            Some(KeyAction::Continue)
+        }
+
+        // Tab cycles the diff mode regardless of focused panel, then sends a new request.
+        KeyCode::Tab => {
+            let next_mode = match state.diff_mode {
+                DiffMode::Unstaged => DiffMode::Staged,
+                DiffMode::Staged => DiffMode::BranchComparison,
+                DiffMode::BranchComparison => DiffMode::CommitRange,
+                DiffMode::CommitRange => DiffMode::Unstaged,
+            };
+            state.diff_mode = next_mode;
+            state.diff_loading = true;
+            state.diff_scroll = 0;
+            if let Some(ref tx) = state.git_tx {
+                let _ = tx.send(GitRequest::LoadDiff(next_mode));
+            }
+            Some(KeyAction::Continue)
+        }
+
+        _ => None,
     }
 }
 

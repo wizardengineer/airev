@@ -18,13 +18,14 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Margin, Rect, Spacing},
-    style::{Modifier, Style},
+    style::{Color, Modifier, Style},
     symbols::merge::MergeStrategy,
     text::{Line, Span},
     widgets::{Block, BorderType, Paragraph},
 };
 
 use crate::app::{AppState, Mode};
+use crate::git::types::DiffMode;
 use crate::theme::Theme;
 
 /// Returns `[left, center, right, status_bar]` panel `Rect`s for the current frame.
@@ -115,7 +116,10 @@ pub fn panel_block<'a>(title: &'a str, is_focused: bool, theme: &'a Theme) -> Bl
 
 /// Renders the 1-row status bar at the bottom of the terminal.
 ///
-/// Always shows a mode indicator (`NORMAL` or `INSERT`). Never renders blank.
+/// Shows a mode indicator (`NORMAL` or `INSERT`), the active diff mode label
+/// (`UNSTAGED`, `STAGED`, `BRANCH`, or `RANGE`), and a `Computing diff...`
+/// loading indicator when `state.diff_loading` is true.
+///
 /// `HelpOverlay` and `ConfirmQuit` both display `NORMAL` because the underlying
 /// mode is `Normal` — the overlay is a transient visual layer, not a mode change.
 ///
@@ -123,7 +127,7 @@ pub fn panel_block<'a>(title: &'a str, is_focused: bool, theme: &'a Theme) -> Bl
 ///
 /// * `frame` — current render frame
 /// * `area` — the 1-row `Rect` returned by `compute_layout` (index 3)
-/// * `state` — read-only app state supplying the current mode
+/// * `state` — read-only app state supplying the current mode, diff mode, and loading flag
 /// * `theme` — active color theme (supplies status bar and mode indicator colors)
 pub fn render_status_bar(frame: &mut Frame, area: Rect, state: &AppState, theme: &Theme) {
     let (mode_text, mode_fg) = match state.mode {
@@ -133,14 +137,26 @@ pub fn render_status_bar(frame: &mut Frame, area: Rect, state: &AppState, theme:
         }
     };
 
-    let mode_span = Span::styled(
-        mode_text,
-        Style::default().fg(mode_fg).add_modifier(Modifier::BOLD),
-    );
-    let status_line = Line::from(vec![mode_span]);
+    let diff_mode_label = match state.diff_mode {
+        DiffMode::Unstaged => "UNSTAGED",
+        DiffMode::Staged => "STAGED",
+        DiffMode::BranchComparison => "BRANCH",
+        DiffMode::CommitRange => "RANGE",
+    };
+
+    let mut spans = vec![
+        Span::styled(mode_text, Style::default().fg(mode_fg).add_modifier(Modifier::BOLD)),
+        Span::raw("  |  "),
+        Span::styled(diff_mode_label, Style::default().fg(Color::DarkGray)),
+    ];
+
+    if state.diff_loading {
+        spans.push(Span::raw("  |  "));
+        spans.push(Span::styled("Computing diff...", Style::default().fg(Color::Yellow)));
+    }
 
     frame.render_widget(
-        Paragraph::new(status_line)
+        Paragraph::new(Line::from(spans))
             .style(Style::default().bg(theme.status_bar_bg).fg(theme.status_bar_fg)),
         area,
     );
