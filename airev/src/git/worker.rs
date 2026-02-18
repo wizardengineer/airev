@@ -39,8 +39,7 @@ pub fn git_worker_loop(
 
     let repo = match Repository::open(&path) {
         Ok(r) => r,
-        Err(e) => {
-            eprintln!("[git_worker] Failed to open repository at {path}: {e}");
+        Err(_) => {
             return;
         }
     };
@@ -53,7 +52,7 @@ pub fn git_worker_loop(
 
 /// Dispatches a GitRequest to the appropriate git2 operation and returns the payload.
 ///
-/// On git2 errors, logs to stderr and returns an empty payload for graceful degradation.
+/// On git2 errors, returns an empty payload for graceful degradation.
 fn handle_request(repo: &Repository, request: GitRequest) -> GitResultPayload {
     let (mode, diff_result) = match request {
         GitRequest::LoadDiff(mode) => (mode, get_diff_for_mode(repo, mode)),
@@ -64,16 +63,13 @@ fn handle_request(repo: &Repository, request: GitRequest) -> GitResultPayload {
 
     match diff_result {
         Ok(diff) => process_diff(mode, &diff),
-        Err(e) => {
-            eprintln!("[git_worker] Diff error for mode {mode:?}: {e}");
-            GitResultPayload {
-                mode,
-                hunks: Vec::new(),
-                files: Vec::new(),
-                highlighted_lines: Vec::new(),
-                hunk_offsets: Vec::new(),
-            }
-        }
+        Err(_) => GitResultPayload {
+            mode,
+            hunks: Vec::new(),
+            files: Vec::new(),
+            highlighted_lines: Vec::new(),
+            hunk_offsets: Vec::new(),
+        },
     }
 }
 
