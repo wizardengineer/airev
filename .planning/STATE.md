@@ -4,7 +4,7 @@
 - **Phase:** 02-rendering-skeleton (executing)
 - **Milestone:** 1 (MVP)
 - **Last updated:** 2026-02-18
-- **Stopped At:** Completed 02-02-PLAN.md (keybindings + help overlay); next: 02-03-PLAN.md
+- **Stopped At:** Completed 02-03-PLAN.md (main.rs wiring + human verification); Phase 2 complete; next: Phase 3 Git Layer
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -18,15 +18,16 @@
 - [x] Phase 1, Plan 03: main.rs event loop + ui.rs blank 3-panel layout — running airev binary
 - [x] Phase 2, Plan 01: AppState + Mode + PanelFocus + responsive 3-panel layout engine + render()
 - [x] Phase 2, Plan 02: vim keybinding dispatcher (handle_key) + modal help overlay (render_help_overlay)
+- [x] Phase 2, Plan 03: main.rs wiring (handle_key in AppEvent::Key arm) + human verification of full interactive TUI
 
 ## Next Step
-Execute plan 03 of phase 02-rendering-skeleton (`02-03-PLAN.md`).
+Execute Phase 3: Git Layer (`03-git-layer`). Begin with plan 01.
 
 ## Phase Progress
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Foundation | in-progress (3/4 plans done) |
-| 2 | Rendering Skeleton | in-progress (2/3 plans done) |
+| 2 | Rendering Skeleton | complete (3/3 plans done) |
 | 3 | Git Layer | pending |
 | 4 | Persistence Layer | pending |
 | 5 | Comment UI | pending |
@@ -61,6 +62,8 @@ Execute plan 03 of phase 02-rendering-skeleton (`02-03-PLAN.md`).
 - Ctrl-H/L focus bindings NOT implemented — Ctrl-H conflicts with Backspace on most terminals; uppercase H/L is the only focus keybinding
 - frame.area().width < 60 guard in render_help_overlay() prevents zero-height Rect panic on narrow terminals (Pitfall 6)
 - No color styling on help overlay text body — theme colors for help content reserved for Phase 5+ polish
+- main.rs contains no key-handling logic — all key logic lives in ui/keybindings.rs dispatched via handle_key(); event loop is a thin dispatcher
+- AppEvent::Resize immediately sends AppEvent::Render for immediate relayout rather than waiting for next tick interval
 
 ### Quick Tasks Completed
 
@@ -77,4 +80,5 @@ Execute plan 03 of phase 02-rendering-skeleton (`02-03-PLAN.md`).
 | quick | 01 | 3min | 2 | 7 |
 | 02-rendering-skeleton | 01 | 4min | 2 | 5 |
 | 02-rendering-skeleton | 02 | 2min | 2 | 3 |
+| 02-rendering-skeleton | 03 | 20min | 2 | 1 |
 
