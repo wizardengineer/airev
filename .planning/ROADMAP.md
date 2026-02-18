@@ -8,13 +8,13 @@
 **Goal:** A running TUI shell with full panic/signal safety, a healthy WAL-configured database, and
 the two-binary architecture committed in code — before any feature is built on top of it.
 
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans executed
 
 Plans:
 - [x] 01-01-PLAN.md — Cargo workspace + airev-core shared types and WAL DB initialization
 - [ ] 01-02-PLAN.md — tui.rs (stderr backend, panic hook, SIGTERM) + event.rs (AppEvent bus)
 - [ ] 01-03-PLAN.md — main.rs event loop + ui.rs blank 3-panel placeholder
-- [ ] 01-04-PLAN.md — Phase exit criteria verification checkpoint
+- [x] 01-04-PLAN.md — Phase exit criteria verification checkpoint
 
 **Delivers:**
 - Cargo workspace with two binaries: `airev` (TUI crate) and `airev-mcp` (MCP server crate),
