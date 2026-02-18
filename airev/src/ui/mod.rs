@@ -8,6 +8,7 @@
 //! wires real diff content).
 
 mod layout;
+pub mod help;
 pub mod keybindings;
 
 use ratatui::{
@@ -17,7 +18,7 @@ use ratatui::{
     widgets::{List, ListItem, Paragraph},
 };
 
-use crate::app::{AppState, PanelFocus};
+use crate::app::{AppState, Mode, PanelFocus};
 use crate::theme::Theme;
 use layout::{compute_layout, inner_rect, panel_block, render_status_bar};
 
@@ -63,8 +64,11 @@ pub fn render(frame: &mut Frame, state: &mut AppState, theme: &Theme) {
     // Status bar: always visible, 1 row, shows current mode.
     render_status_bar(frame, status_bar, state, theme);
 
-    // TODO: render_help_overlay(frame, theme)
-    // Added in Phase 2 plan 02 (ui/help.rs). Conditional on state.mode == Mode::HelpOverlay.
+    // Help overlay: rendered after all panels so it sits on top.
+    // Clear is called inside render_help_overlay() to erase the background.
+    if state.mode == Mode::HelpOverlay {
+        help::render_help_overlay(frame, theme);
+    }
 }
 
 /// Renders the file-list panel with placeholder items.
