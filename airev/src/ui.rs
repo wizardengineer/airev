@@ -35,26 +35,32 @@ pub fn render(frame: &mut Frame, theme: &Theme) {
         ])
         .split(frame.area());
 
+    let panel_style = Style::default().bg(theme.background);
+    let border_style = Style::default().fg(theme.border_inactive);
+
     // Phase 2 will switch the focused panel to theme.border_active.
     frame.render_widget(
         Block::default()
             .title("Files")
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(theme.border_inactive)),
+            .style(panel_style)
+            .border_style(border_style),
         chunks[0],
     );
     frame.render_widget(
         Block::default()
             .title("Diff")
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(theme.border_inactive)),
+            .style(panel_style)
+            .border_style(border_style),
         chunks[1],
     );
     frame.render_widget(
         Block::default()
             .title("Comments")
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(theme.border_inactive)),
+            .style(panel_style)
+            .border_style(border_style),
         chunks[2],
     );
 }
