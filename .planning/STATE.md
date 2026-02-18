@@ -1,10 +1,10 @@
 # Project State
 
 ## Current Status
-- **Phase:** 01-foundation (executing)
+- **Phase:** 02-rendering-skeleton (executing)
 - **Milestone:** 1 (MVP)
 - **Last updated:** 2026-02-18
-- **Stopped At:** Completed quick-01 (automated pre-check + theme system); next: 01-04-PLAN.md
+- **Stopped At:** Completed 02-01 (AppState + 3-panel layout); next: 02-02-PLAN.md
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -16,15 +16,16 @@
 - [x] Phase 1, Plan 01: Cargo workspace + airev-core types and WAL DB initialization
 - [x] Phase 1, Plan 02: tui.rs terminal lifecycle + event.rs unified event bus
 - [x] Phase 1, Plan 03: main.rs event loop + ui.rs blank 3-panel layout — running airev binary
+- [x] Phase 2, Plan 01: AppState + Mode + PanelFocus + responsive 3-panel layout engine + render()
 
 ## Next Step
-Execute plan 04 of phase 01-foundation (`01-04-PLAN.md`).
+Execute plan 02 of phase 02-rendering-skeleton (`02-02-PLAN.md`).
 
 ## Phase Progress
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Foundation | in-progress (3/4 plans done) |
-| 2 | Rendering Skeleton | pending |
+| 2 | Rendering Skeleton | in-progress (1/3 plans done) |
 | 3 | Git Layer | pending |
 | 4 | Persistence Layer | pending |
 | 5 | Comment UI | pending |
@@ -52,6 +53,9 @@ Execute plan 04 of phase 01-foundation (`01-04-PLAN.md`).
 - Theme struct: all 18 color fields defined in Phase 1 (border_inactive used now; border_active and diff/badge/status colors reserved for Phase 2+)
 - Theme::from_name() graceful fallback to dark() on unknown names — config errors are soft stderr prints, never panics
 - toml 0.8 workspace dep (not 1.x) — compatible with Rust 1.89.0 MSRV; theme config loaded as Step 0 before terminal init (read-only, safe)
+- MergeStrategy::Fuzzy used instead of Exact for border merging — handles Thick+Plain border junctions that Exact cannot merge cleanly
+- ListState::scroll_down_by/scroll_up_by take u16 not usize in ratatui 0.30 (research doc showed wrong type cast)
+- Side panels skipped entirely (not rendered) when area.width == 0 — prevents border artifacts from collapsed Constraint::Length(0)
 
 ### Quick Tasks Completed
 
@@ -66,4 +70,5 @@ Execute plan 04 of phase 01-foundation (`01-04-PLAN.md`).
 | 01-foundation | 02 | 2min | 2 | 3 |
 | 01-foundation | 03 | 2min | 2 | 2 |
 | quick | 01 | 3min | 2 | 7 |
+| 02-rendering-skeleton | 01 | 4min | 2 | 5 |
 

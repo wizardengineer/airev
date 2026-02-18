@@ -46,7 +46,7 @@ verify what cannot be scripted (panic recovery, SIGTERM behavior, visual startup
 **Goal:** A navigable 3-panel layout with vim keybindings and a mode indicator — enough UI
 infrastructure that every subsequent phase can render and test its output.
 
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] 02-01-PLAN.md — AppState + responsive 3-panel layout engine with status bar
