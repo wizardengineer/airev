@@ -8,7 +8,7 @@
 **Goal:** A running TUI shell with full panic/signal safety, a healthy WAL-configured database, and
 the two-binary architecture committed in code — before any feature is built on top of it.
 
-**Plans:** 4 plans
+**Plans:** 3/4 plans executed
 
 Plans:
 - [x] 01-01-PLAN.md — Cargo workspace + airev-core shared types and WAL DB initialization
