@@ -4,7 +4,7 @@
 - **Phase:** 03-git-layer (executing)
 - **Milestone:** 1 (MVP)
 - **Last updated:** 2026-02-18
-- **Stopped At:** Completed 03-01-PLAN.md (Cargo deps + owned git types + AppEvent::GitResult payload); next: Phase 3 Plan 02 (AsyncGit worker thread)
+- **Stopped At:** Completed 03-02-PLAN.md (AsyncGit worker thread + AppState Phase 3 fields); next: Phase 3 Plan 03
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -20,16 +20,17 @@
 - [x] Phase 2, Plan 02: vim keybinding dispatcher (handle_key) + modal help overlay (render_help_overlay)
 - [x] Phase 2, Plan 03: main.rs wiring (handle_key in AppEvent::Key arm) + human verification of full interactive TUI
 - [x] Phase 3, Plan 01: Cargo deps (git2/crossbeam-channel/syntect/syntect-tui/similar) + owned git types (OwnedDiffHunk, OwnedDiffLine, FileSummary, DiffMode, GitRequest, GitResultPayload) + AppEvent::GitResult(Box<GitResultPayload>)
+- [x] Phase 3, Plan 02: AsyncGit worker thread (git_worker_loop, 4 diff modes, syntect highlighting, word-level diff via similar) + AppState Phase 3 fields (diff_lines, diff_scroll: usize, file_summaries, diff_mode, diff_loading, hunk_offsets, selected_file_index, hunk_cursor)
 
 ## Next Step
-Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 02 (AsyncGit worker thread).
+Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 03.
 
 ## Phase Progress
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Foundation | in-progress (3/4 plans done) |
 | 2 | Rendering Skeleton | complete (3/3 plans done) |
-| 3 | Git Layer | in-progress (1/? plans done) |
+| 3 | Git Layer | in-progress (2/5 plans done) |
 | 4 | Persistence Layer | pending |
 | 5 | Comment UI | pending |
 | 6 | Live File Watcher | pending |
@@ -69,6 +70,9 @@ Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 02 (AsyncGit wor
 - syntect default-fancy feature uses pure-Rust fancy-regex instead of Oniguruma C library — no C build dependency
 - All types crossing thread boundary are fully owned (no lifetimes) — String/u32/char/Vec/usize ensure Send without unsafe
 - Box<GitResultPayload> in AppEvent keeps enum variant pointer-sized on channel (payload can be large)
+- RefCell used in extract_hunks to share hunks Vec between two diff.foreach closures without unsafe — git2 guarantees sequential execution on same thread
+- Custom syntect_to_span replaces into_span to resolve ratatui::style::Style vs ratatui::prelude::Style type split in syntect-tui 3.0 / ratatui 0.30
+- diff_scroll: u16 → usize in AppState; ui/mod.rs temporary as u16 cast for Paragraph::scroll until Plan 03 introduces List widget
 
 ### Quick Tasks Completed
 
@@ -87,4 +91,5 @@ Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 02 (AsyncGit wor
 | 02-rendering-skeleton | 02 | 2min | 2 | 3 |
 | 02-rendering-skeleton | 03 | 20min | 2 | 1 |
 | 03-git-layer | 01 | 3min | 2 | 7 |
+| 03-git-layer | 02 | 5min | 3 | 4 |
 
