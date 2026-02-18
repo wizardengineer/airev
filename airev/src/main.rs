@@ -30,6 +30,8 @@ mod ui;
 
 use std::sync::atomic::Ordering;
 
+use ui::keybindings::{handle_key, KeyAction};
+
 /// Returns the path to the airev config file.
 ///
 /// Prefers `$XDG_CONFIG_HOME/airev/config.toml`; falls back to
@@ -118,16 +120,15 @@ async fn main() -> std::io::Result<()> {
                         terminal.draw(|frame| ui::render(frame, &mut state, &theme))?;
                     }
                     Some(event::AppEvent::Key(key)) => {
-                        use crossterm::event::KeyCode;
-                        if matches!(key.code, KeyCode::Char('q') | KeyCode::Char('Q')) {
-                            break 'event_loop;
+                        match handle_key(key, &mut state) {
+                            KeyAction::Quit => break 'event_loop,
+                            KeyAction::Continue => {}
                         }
                     }
                     Some(event::AppEvent::Resize(_, _)) => {
-                        // Resize is handled automatically by ratatui on the next Render:
-                        // frame.area() returns the new terminal size. No manual relayout
-                        // is needed here in Phase 1. Future phases may store the new
-                        // dimensions in app state for widget calculations.
+                        // Force an immediate redraw after a terminal resize so the new
+                        // layout is computed without waiting for the next 100ms tick.
+                        handler.tx.send(event::AppEvent::Render).ok();
                     }
                     Some(event::AppEvent::Quit) | None => break 'event_loop,
                     _ => {}
