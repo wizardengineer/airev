@@ -12,3 +12,8 @@ futures = { workspace = true }
 airev-core = { workspace = true }
 serde = { workspace = true }
 toml = { workspace = true }
+git2              = { workspace = true }
+crossbeam-channel = { workspace = true }
+syntect           = { workspace = true }
+syntect-tui       = { workspace = true }
+similar           = { workspace = true }

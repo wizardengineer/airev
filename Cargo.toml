@@ -13,3 +13,8 @@ futures = "0.3"
 airev-core = { path = "airev-core" }
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
+git2              = "0.20"
+crossbeam-channel = "0.5"
+syntect           = { version = "5.3", default-features = false, features = ["default-fancy"] }
+syntect-tui       = "3.0"
+similar           = { version = "2.7", features = ["inline"] }
