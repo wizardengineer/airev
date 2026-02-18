@@ -8,6 +8,7 @@
 //! wires real diff content).
 
 mod layout;
+pub mod keybindings;
 
 use ratatui::{
     Frame,
