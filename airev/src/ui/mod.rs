@@ -8,6 +8,7 @@
 //! wires real diff content).
 
 mod layout;
+pub mod diff_view;
 pub mod help;
 pub mod keybindings;
 

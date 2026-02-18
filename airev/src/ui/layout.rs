@@ -60,12 +60,13 @@ pub fn compute_layout(frame: &Frame, state: &AppState) -> [Rect; 4] {
         .spacing(Spacing::Overlap(1))
     } else {
         // Both < 80 and 80..119 collapse side panels.
+        // Do NOT use Spacing::Overlap here — Length(0) + Overlap(1) causes u16 underflow
+        // in ratatui's layout engine (0 - 1 wraps to u16::MAX, producing an invalid Rect).
         Layout::horizontal([
             Constraint::Length(0),
             Constraint::Fill(1),
             Constraint::Length(0),
         ])
-        .spacing(Spacing::Overlap(1))
     };
 
     let [left, center, right] = main_area.layout(&horizontal);
