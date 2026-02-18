@@ -22,6 +22,7 @@
 //! `init_tui()` or inside the Render arm — draw errors propagate out of the loop
 //! and reach `restore_tui()` after `break`. The panic hook covers unexpected panics.
 
+mod app;
 mod event;
 mod theme;
 mod tui;
@@ -74,6 +75,7 @@ fn load_theme_name() -> String {
 async fn main() -> std::io::Result<()> {
     // Step 0: load theme from config — read-only, safe before terminal init.
     let theme = theme::Theme::from_name(&load_theme_name());
+    let mut state = app::AppState::default();
 
     // Step 1: panic hook installed first — innermost hook restores terminal.
     tui::install_panic_hook();
@@ -113,7 +115,7 @@ async fn main() -> std::io::Result<()> {
                 match maybe_event {
                     Some(event::AppEvent::Render) => {
                         // Exactly one draw() call per Render event — never elsewhere.
-                        terminal.draw(|frame| ui::render(frame, &theme))?;
+                        terminal.draw(|frame| ui::render(frame, &mut state, &theme))?;
                     }
                     Some(event::AppEvent::Key(key)) => {
                         use crossterm::event::KeyCode;

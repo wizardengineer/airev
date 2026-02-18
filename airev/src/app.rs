@@ -133,7 +133,7 @@ impl AppState {
     pub fn scroll_down(&mut self, lines: u16) {
         match self.focus {
             PanelFocus::FileList => {
-                self.file_list_state.scroll_down_by(lines as usize);
+                self.file_list_state.scroll_down_by(lines);
             }
             PanelFocus::Diff => {
                 self.diff_scroll = self.diff_scroll.saturating_add(lines);
@@ -151,7 +151,7 @@ impl AppState {
     pub fn scroll_up(&mut self, lines: u16) {
         match self.focus {
             PanelFocus::FileList => {
-                self.file_list_state.scroll_up_by(lines as usize);
+                self.file_list_state.scroll_up_by(lines);
             }
             PanelFocus::Diff => {
                 self.diff_scroll = self.diff_scroll.saturating_sub(lines);
