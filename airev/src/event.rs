@@ -22,7 +22,7 @@ use tokio::time::interval;
 /// Marked `#[non_exhaustive]` so that new variants added in later phases
 /// (e.g., LSP diagnostics, AI streaming tokens) do not break exhaustive match
 /// arms in existing handlers.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[non_exhaustive]
 pub enum AppEvent {
     /// A key press from the terminal (`KeyEventKind::Press` only).
@@ -40,7 +40,7 @@ pub enum AppEvent {
     /// A watched file changed on disk.
     FileChanged,
     /// Result from the git background thread.
-    GitResult,
+    GitResult(Box<crate::git::types::GitResultPayload>),
     /// Result from the database background task.
     DbResult,
     /// Quit signal (from `q` key or SIGTERM).

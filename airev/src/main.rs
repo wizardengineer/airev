@@ -24,6 +24,7 @@
 
 mod app;
 mod event;
+mod git;
 mod theme;
 mod tui;
 mod ui;
