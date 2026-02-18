@@ -7,6 +7,8 @@
 
 use ratatui::widgets::ListState;
 
+use crate::git::types::{DiffMode, FileSummary};
+
 /// Editor mode controlling which keybinding set is active.
 ///
 /// The default mode is `Normal`. Transitions are driven by the keybinding dispatcher.
@@ -76,9 +78,9 @@ pub struct AppState {
     /// Stateful list widget backing the file-list panel (left).
     pub file_list_state: ListState,
 
-    /// Vertical scroll offset for the diff `Paragraph` widget (centre panel).
-    /// Passed directly as `Paragraph::scroll((diff_scroll, 0))`.
-    pub diff_scroll: u16,
+    /// Vertical scroll offset for the diff panel (centre panel).
+    /// usize supports >65535 line diffs; clamped by the renderer to visible range.
+    pub diff_scroll: usize,
     /// Vertical scroll offset for the comments `Paragraph` widget (right panel).
     pub comments_scroll: u16,
 
@@ -100,6 +102,23 @@ pub struct AppState {
     /// Set to `true` when the user has typed a comment that has not been saved.
     /// Guards the quit path — if `true`, a confirmation dialog is shown first.
     pub has_unsaved_comments: bool,
+
+    // Phase 3: Git Layer fields
+
+    /// Pre-highlighted diff lines from the git background thread (List widget source).
+    pub diff_lines: Vec<ratatui::text::Line<'static>>,
+    /// File summaries from the most recent git diff (for the file-list panel).
+    pub file_summaries: Vec<FileSummary>,
+    /// Currently active diff mode (Unstaged by default).
+    pub diff_mode: DiffMode,
+    /// True while the background thread is computing a diff (shows spinner in status bar).
+    pub diff_loading: bool,
+    /// Line indices of @@ hunk header lines within diff_lines (for [/] hunk navigation).
+    pub hunk_offsets: Vec<usize>,
+    /// Index of the currently selected file in file_summaries (for file-list → diff jump).
+    pub selected_file_index: usize,
+    /// Current hunk offset cursor index (index into hunk_offsets, not line number).
+    pub hunk_cursor: usize,
 }
 
 impl Default for AppState {
@@ -121,6 +140,13 @@ impl Default for AppState {
             center_pct: 55,
             right_pct: 25,
             has_unsaved_comments: false,
+            diff_lines: Vec::new(),
+            file_summaries: Vec::new(),
+            diff_mode: DiffMode::default(),
+            diff_loading: false,
+            hunk_offsets: Vec::new(),
+            selected_file_index: 0,
+            hunk_cursor: 0,
         }
     }
 }
@@ -129,14 +155,15 @@ impl AppState {
     /// Scrolls the focused panel down by `lines` rows.
     ///
     /// For `FileList`: advances the `ListState` selection by `lines` items.
-    /// For `Diff` / `Comments`: adds `lines` to the `u16` scroll offset (saturating).
+    /// For `Diff`: adds `lines` to the usize scroll offset (saturating).
+    /// For `Comments`: adds `lines` to the u16 scroll offset (saturating).
     pub fn scroll_down(&mut self, lines: u16) {
         match self.focus {
             PanelFocus::FileList => {
                 self.file_list_state.scroll_down_by(lines);
             }
             PanelFocus::Diff => {
-                self.diff_scroll = self.diff_scroll.saturating_add(lines);
+                self.diff_scroll = self.diff_scroll.saturating_add(lines as usize);
             }
             PanelFocus::Comments => {
                 self.comments_scroll = self.comments_scroll.saturating_add(lines);
@@ -147,14 +174,15 @@ impl AppState {
     /// Scrolls the focused panel up by `lines` rows.
     ///
     /// For `FileList`: moves the `ListState` selection up by `lines` items.
-    /// For `Diff` / `Comments`: subtracts `lines` from the scroll offset (saturating).
+    /// For `Diff`: subtracts `lines` from the usize scroll offset (saturating).
+    /// For `Comments`: subtracts `lines` from the u16 scroll offset (saturating).
     pub fn scroll_up(&mut self, lines: u16) {
         match self.focus {
             PanelFocus::FileList => {
                 self.file_list_state.scroll_up_by(lines);
             }
             PanelFocus::Diff => {
-                self.diff_scroll = self.diff_scroll.saturating_sub(lines);
+                self.diff_scroll = self.diff_scroll.saturating_sub(lines as usize);
             }
             PanelFocus::Comments => {
                 self.comments_scroll = self.comments_scroll.saturating_sub(lines);
@@ -181,15 +209,15 @@ impl AppState {
 
     /// Scrolls the focused panel to the very bottom.
     ///
-    /// For `FileList`: selects the last item. For `Diff` / `Comments`: sets offset to
-    /// `u16::MAX`; ratatui silently clamps to the last visible line.
+    /// For `FileList`: selects the last item. For `Diff`: sets to last line index
+    /// (clamped by renderer). For `Comments`: sets offset to u16::MAX (ratatui clamps).
     pub fn scroll_bottom(&mut self) {
         match self.focus {
             PanelFocus::FileList => {
                 self.file_list_state.select_last();
             }
             PanelFocus::Diff => {
-                self.diff_scroll = u16::MAX;
+                self.diff_scroll = self.diff_lines.len().saturating_sub(1);
             }
             PanelFocus::Comments => {
                 self.comments_scroll = u16::MAX;
@@ -262,20 +290,55 @@ impl AppState {
         self.file_list_state.scroll_down_by(1);
     }
 
-    /// Navigates to the previous diff hunk (placeholder — Phase 3 wires real hunks).
+    /// Jumps diff_scroll to the previous hunk header ([ keybinding).
     ///
-    /// Currently scrolls the diff panel up by 5 lines. Phase 3 replaces this with
-    /// an actual hunk-index walk using the parsed diff data.
+    /// Decrements hunk_cursor. If already at the first hunk, stays there.
     pub fn prev_hunk(&mut self) {
-        self.diff_scroll = self.diff_scroll.saturating_sub(5);
+        if self.hunk_offsets.is_empty() {
+            return;
+        }
+        self.hunk_cursor = self.hunk_cursor.saturating_sub(1);
+        self.diff_scroll = self.hunk_offsets[self.hunk_cursor];
     }
 
-    /// Navigates to the next diff hunk (placeholder — Phase 3 wires real hunks).
+    /// Jumps diff_scroll to the next hunk header (] keybinding).
     ///
-    /// Currently scrolls the diff panel down by 5 lines. Phase 3 replaces this with
-    /// an actual hunk-index walk using the parsed diff data.
+    /// Advances hunk_cursor. If already at the last hunk, stays there.
     pub fn next_hunk(&mut self) {
-        self.diff_scroll = self.diff_scroll.saturating_add(5);
+        if self.hunk_offsets.is_empty() {
+            return;
+        }
+        self.hunk_cursor = (self.hunk_cursor + 1).min(self.hunk_offsets.len() - 1);
+        self.diff_scroll = self.hunk_offsets[self.hunk_cursor];
+    }
+
+    /// Applies the received GitResultPayload to AppState.
+    ///
+    /// Called from the AppEvent::GitResult arm in main.rs. Replaces diff content,
+    /// clears the loading flag, and resets scroll to top on mode change.
+    pub fn apply_git_result(&mut self, payload: crate::git::types::GitResultPayload) {
+        let mode_changed = self.diff_mode != payload.mode;
+        self.diff_mode = payload.mode;
+        self.file_summaries = payload.files;
+        self.diff_lines = payload.highlighted_lines;
+        self.hunk_offsets = payload.hunk_offsets;
+        self.diff_loading = false;
+        if mode_changed {
+            self.diff_scroll = 0;
+            self.hunk_cursor = 0;
+        }
+    }
+
+    /// Jumps diff view to the selected file (Enter or l on file list).
+    ///
+    /// Updates selected_file_index and resets diff_scroll to 0.
+    pub fn jump_to_selected_file(&mut self) {
+        if let Some(idx) = self.file_list_state.selected() {
+            self.selected_file_index = idx;
+            self.diff_scroll = 0;
+            self.hunk_cursor = 0;
+            self.focus = PanelFocus::Diff;
+        }
     }
 
     /// Shrinks the diff (centre) panel by transferring 5% to each side panel.

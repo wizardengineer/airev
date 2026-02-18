@@ -134,7 +134,9 @@ fn render_diff(
     frame.render_widget(block, area);
 
     let placeholder = build_diff_placeholder(theme);
-    let paragraph = Paragraph::new(placeholder).scroll((state.diff_scroll, 0));
+    // diff_scroll is usize (Plan 02+); cast to u16 for Paragraph::scroll until Plan 03
+    // replaces this with a List widget that uses usize offsets directly.
+    let paragraph = Paragraph::new(placeholder).scroll((state.diff_scroll as u16, 0));
     frame.render_widget(paragraph, inner);
 }
 
