@@ -62,7 +62,7 @@ pub fn render_help_overlay(frame: &mut Frame, theme: &Theme) {
 /// Phase 5+ polish.
 fn build_help_text() -> Text<'static> {
     Text::from(vec![
-        Line::from("Navigation (all modes)"),
+        Line::from("Navigation"),
         Line::from("  j / k         Scroll down / up one line"),
         Line::from("  g / G         Jump to top / bottom"),
         Line::from("  Ctrl-d / u    Scroll half page down / up"),
@@ -71,10 +71,14 @@ fn build_help_text() -> Text<'static> {
         Line::from(""),
         Line::from("File List"),
         Line::from("  { / }         Previous / next file"),
+        Line::from("  Enter / l     Jump to selected file in diff view"),
         Line::from(""),
         Line::from("Diff View"),
-        Line::from("  [ / ]         Previous / next hunk (placeholder)"),
+        Line::from("  [ / ]         Previous / next hunk"),
         Line::from("  < / >         Shrink / grow diff panel by 5%"),
+        Line::from(""),
+        Line::from("Diff Mode  (Tab cycles through all modes)"),
+        Line::from("  Unstaged  ->  Staged  ->  Branch vs main  ->  Commit Range"),
         Line::from(""),
         Line::from("General"),
         Line::from("  ?             Open / close this help overlay"),
