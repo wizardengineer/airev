@@ -1,0 +1,12 @@
+[package]
+name = "airev"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ratatui = { workspace = true }
+crossterm = { workspace = true }
+tokio = { workspace = true }
+signal-hook = { workspace = true }
+futures = { workspace = true }
+airev-core = { workspace = true }

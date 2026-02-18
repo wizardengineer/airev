@@ -1,0 +1,10 @@
+[package]
+name = "airev-mcp"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { workspace = true }
+rusqlite = { workspace = true }
+airev-core = { workspace = true }
+rmcp = "0.16"
