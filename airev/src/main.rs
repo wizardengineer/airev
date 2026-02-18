@@ -1,1 +1,3 @@
+mod tui;
+
 fn main() {}
