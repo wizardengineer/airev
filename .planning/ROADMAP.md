@@ -36,7 +36,9 @@ Plans:
 **Exit criteria:** Intentionally panic the app and confirm the terminal restores without `reset`.
 Send SIGTERM and confirm clean exit. Open the database with `sqlite3 .airev/reviews.db` and
 confirm `PRAGMA journal_mode;` returns `wal`. The workspace builds with `cargo build --workspace`
-with zero errors on both macOS and Linux.
+with zero errors on both macOS and Linux. Automated pre-checks (cargo build exit code, sqlite3 WAL
+mode query) run as a scripted auto task before the human checkpoint — the human is only asked to
+verify what cannot be scripted (panic recovery, SIGTERM behavior, visual startup timing).
 
 ---
 
