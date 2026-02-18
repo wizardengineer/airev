@@ -4,7 +4,7 @@
 - **Phase:** 02-rendering-skeleton (executing)
 - **Milestone:** 1 (MVP)
 - **Last updated:** 2026-02-18
-- **Stopped At:** Completed 02-01 (AppState + 3-panel layout); next: 02-02-PLAN.md
+- **Stopped At:** Completed 02-02-PLAN.md (keybindings + help overlay); next: 02-03-PLAN.md
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -17,15 +17,16 @@
 - [x] Phase 1, Plan 02: tui.rs terminal lifecycle + event.rs unified event bus
 - [x] Phase 1, Plan 03: main.rs event loop + ui.rs blank 3-panel layout — running airev binary
 - [x] Phase 2, Plan 01: AppState + Mode + PanelFocus + responsive 3-panel layout engine + render()
+- [x] Phase 2, Plan 02: vim keybinding dispatcher (handle_key) + modal help overlay (render_help_overlay)
 
 ## Next Step
-Execute plan 02 of phase 02-rendering-skeleton (`02-02-PLAN.md`).
+Execute plan 03 of phase 02-rendering-skeleton (`02-03-PLAN.md`).
 
 ## Phase Progress
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Foundation | in-progress (3/4 plans done) |
-| 2 | Rendering Skeleton | in-progress (1/3 plans done) |
+| 2 | Rendering Skeleton | in-progress (2/3 plans done) |
 | 3 | Git Layer | pending |
 | 4 | Persistence Layer | pending |
 | 5 | Comment UI | pending |
@@ -56,6 +57,10 @@ Execute plan 02 of phase 02-rendering-skeleton (`02-02-PLAN.md`).
 - MergeStrategy::Fuzzy used instead of Exact for border merging — handles Thick+Plain border junctions that Exact cannot merge cleanly
 - ListState::scroll_down_by/scroll_up_by take u16 not usize in ratatui 0.30 (research doc showed wrong type cast)
 - Side panels skipped entirely (not rendered) when area.width == 0 — prevents border artifacts from collapsed Constraint::Length(0)
+- handle_scroll_key() private helper splits j/k/g/G/Ctrl combos out of handle_normal() to stay under 50 lines per function
+- Ctrl-H/L focus bindings NOT implemented — Ctrl-H conflicts with Backspace on most terminals; uppercase H/L is the only focus keybinding
+- frame.area().width < 60 guard in render_help_overlay() prevents zero-height Rect panic on narrow terminals (Pitfall 6)
+- No color styling on help overlay text body — theme colors for help content reserved for Phase 5+ polish
 
 ### Quick Tasks Completed
 
@@ -71,4 +76,5 @@ Execute plan 02 of phase 02-rendering-skeleton (`02-02-PLAN.md`).
 | 01-foundation | 03 | 2min | 2 | 2 |
 | quick | 01 | 3min | 2 | 7 |
 | 02-rendering-skeleton | 01 | 4min | 2 | 5 |
+| 02-rendering-skeleton | 02 | 2min | 2 | 3 |
 
