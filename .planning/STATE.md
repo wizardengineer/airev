@@ -4,7 +4,7 @@
 - **Phase:** 01-foundation (executing)
 - **Milestone:** 1 (MVP)
 - **Last updated:** 2026-02-18
-- **Stopped At:** Completed 01-03-PLAN.md
+- **Stopped At:** Completed quick-01 (automated pre-check + theme system); next: 01-04-PLAN.md
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -49,6 +49,9 @@ Execute plan 04 of phase 01-foundation (`01-04-PLAN.md`).
 - EventHandler uses unbounded mpsc channel — producer (terminal + timers) bounded by hardware rate, consumer (main loop) always keeps up
 - map_err(|e| std::io::Error::new(ErrorKind::Other, e)) wraps tokio_rusqlite::Error for ? in main() -> std::io::Result<()>
 - 50ms tokio::select! heartbeat arm for SIGTERM polling — prevents rx.recv() blocking indefinitely on quiescent terminal
+- Theme struct: all 18 color fields defined in Phase 1 (border_inactive used now; border_active and diff/badge/status colors reserved for Phase 2+)
+- Theme::from_name() graceful fallback to dark() on unknown names — config errors are soft stderr prints, never panics
+- toml 0.8 workspace dep (not 1.x) — compatible with Rust 1.89.0 MSRV; theme config loaded as Step 0 before terminal init (read-only, safe)
 
 ## Performance Metrics
 | Phase | Plan | Duration | Tasks | Files |
@@ -56,4 +59,5 @@ Execute plan 04 of phase 01-foundation (`01-04-PLAN.md`).
 | 01-foundation | 01 | 2min | 2 | 11 |
 | 01-foundation | 02 | 2min | 2 | 3 |
 | 01-foundation | 03 | 2min | 2 | 2 |
+| quick | 01 | 3min | 2 | 7 |
 
