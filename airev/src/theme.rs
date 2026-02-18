@@ -96,7 +96,7 @@ impl Theme {
             status_mode_normal: Color::Cyan,
             status_mode_insert: Color::Green,
 
-            background: Color::Reset,
+            background: Color::Black,
         }
     }
 

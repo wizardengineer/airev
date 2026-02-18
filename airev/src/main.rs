@@ -54,19 +54,19 @@ fn load_theme_name() -> String {
     let path = config_path();
     let raw = match std::fs::read_to_string(&path) {
         Ok(s) => s,
-        Err(_) => return "dark".to_owned(),
+        Err(_) => return "catppuccin-mocha".to_owned(),
     };
     let table: toml::Table = match toml::from_str(&raw) {
         Ok(t) => t,
         Err(e) => {
             eprintln!("airev: config parse error in {:?}: {}", path, e);
-            return "dark".to_owned();
+            return "catppuccin-mocha".to_owned();
         }
     };
     table
         .get("theme")
         .and_then(|v| v.as_str())
-        .unwrap_or("dark")
+        .unwrap_or("catppuccin-mocha")
         .to_owned()
 }
 
