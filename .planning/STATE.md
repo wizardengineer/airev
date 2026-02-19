@@ -4,7 +4,7 @@
 - **Phase:** 04-persistence-layer (next)
 - **Milestone:** 1 (MVP)
 - **Last updated:** 2026-02-19
-- **Stopped At:** Completed 03-06-PLAN.md (Gap closure — per-file line counts, file_line_offsets jump, status bar file count)
+- **Stopped At:** Completed 04-01-PLAN.md (v1 schema with UUID text IDs, migrate(), open_db() calling migrate(), detect_or_create_session/load_file_review_state/toggle_file_reviewed/update_session_timestamp)
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -25,9 +25,10 @@
 - [x] Phase 3, Plan 04: AsyncGit wired at startup with git repo detection; AppEvent::GitResult arm; Tab diff mode cycle; Enter/l file-list jump; status bar DiffMode label + loading indicator
 - [x] Phase 3, Plan 05: Exit criteria verification — 6 automated pre-checks passed (no unsafe, cargo build 0, no E0277, Repository in worker, usize scroll, bounded slice); human-verified real diff content, 60fps scrolling, all 4 diff modes, file jump, hunk nav, no crashes
 - [x] Phase 3, Plan 06: Gap closure — FileSummary.added/removed populated with real counts; file_line_offsets field and index chain added; jump_to_selected_file uses offset lookup; status bar shows file count
+- [x] Phase 4, Plan 01: v1 schema (sessions/comments/file_review_state/threads with UUID text PKs) + schema_version migration system + detect_or_create_session/load_file_review_state/toggle_file_reviewed/update_session_timestamp
 
 ## Next Step
-Execute Phase 4: Persistence Layer (`04-persistence-layer`). Begin with plan 01.
+Execute Phase 4: Persistence Layer (`04-persistence-layer`). Continue with plan 02.
 
 ## Phase Progress
 | Phase | Name | Status |
@@ -35,7 +36,7 @@ Execute Phase 4: Persistence Layer (`04-persistence-layer`). Begin with plan 01.
 | 1 | Foundation | in-progress (3/4 plans done) |
 | 2 | Rendering Skeleton | complete (3/3 plans done) |
 | 3 | Git Layer | complete (5/5 plans done) |
-| 4 | Persistence Layer | pending |
+| 4 | Persistence Layer | in-progress (1/3 plans done) |
 | 5 | Comment UI | pending |
 | 6 | Live File Watcher | pending |
 | 7 | MCP Server | pending |
@@ -98,6 +99,10 @@ Execute Phase 4: Persistence Layer (`04-persistence-layer`). Begin with plan 01.
 - file_line_offsets = file_hunk_starts mapped through hunk_offsets — no new data structure needed, reuses existing hunk offset table
 - jump_to_selected_file falls back to 0 via .get(idx).copied().unwrap_or(0) when no diff loaded yet
 - Status bar file count uses same Color::DarkGray as diff mode label; only shown when file_summaries is non-empty
+- migrate() takes &mut rusqlite::Connection (not &) because transaction_with_behavior() requires mutable borrow
+- threads table included in SCHEMA_V1_SQL from day one (not deferred to Phase 7) to satisfy exit criterion SELECT * FROM threads
+- busy_timeout changed from 10s to 5s per research recommendation for MCP concurrent access
+- schema_version table approach used for migrations (not rusqlite_migration crate or user_version PRAGMA) — locked by requirements
 
 ### Quick Tasks Completed
 
@@ -125,4 +130,5 @@ Execute Phase 4: Persistence Layer (`04-persistence-layer`). Begin with plan 01.
 | quick | 03 | 6min | 2 | 8 |
 | 03-git-layer | 05 | 5min | 2 | 0 |
 | 03-git-layer | 06 | 2min | 3 | 4 |
+| Phase 04-persistence-layer P01 | 3min | 2 tasks | 5 files |
 
