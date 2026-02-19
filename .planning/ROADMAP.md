@@ -78,7 +78,7 @@ a running session and confirm layout recomputes immediately without stale geomet
 **Goal:** The diff view renders real git content — syntax-highlighted, virtually scrolled, and
 produced by a background thread that cannot freeze the UI — across all four diff modes.
 
-**Plans:** 5/5 plans executed (Complete)
+**Plans:** 6 plans (5 executed + 1 gap closure)
 
 Plans:
 - [x] 03-01-PLAN.md — Cargo deps + owned diff types (OwnedDiffHunk, FileSummary, DiffMode) + AppEvent::GitResult payload
@@ -86,6 +86,7 @@ Plans:
 - [x] 03-03-PLAN.md — ui/diff_view.rs virtual List scrolling + ui/file_tree.rs real file summaries
 - [x] 03-04-PLAN.md — main.rs AsyncGit wiring + Tab mode keybinding + Enter/l file jump + status bar loading indicator
 - [x] 03-05-PLAN.md — automated pre-checks + human verification checkpoint
+- [ ] 03-06-PLAN.md — Gap closure: file line counts, file jump offsets, status bar file count
 
 **Delivers:**
 - `git/mod.rs`: `AsyncGit` facade; a single `std::thread::spawn` thread owns the
