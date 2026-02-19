@@ -131,8 +131,9 @@ pub fn panel_block<'a>(title: &'a str, is_focused: bool, theme: &'a Theme) -> Bl
 /// Renders the 1-row status bar at the bottom of the terminal.
 ///
 /// Shows a mode indicator (`NORMAL` or `INSERT`), the active diff mode label
-/// (`UNSTAGED`, `STAGED`, `BRANCH`, or `RANGE`), and a `Computing diff...`
-/// loading indicator when `state.diff_loading` is true.
+/// (`UNSTAGED`, `STAGED`, `BRANCH`, or `RANGE`), a file count (e.g. `12 files`)
+/// when files are loaded, and a `Computing diff...` loading indicator when
+/// `state.diff_loading` is true.
 ///
 /// `HelpOverlay` and `ConfirmQuit` both display `NORMAL` because the underlying
 /// mode is `Normal` — the overlay is a transient visual layer, not a mode change.
@@ -141,7 +142,8 @@ pub fn panel_block<'a>(title: &'a str, is_focused: bool, theme: &'a Theme) -> Bl
 ///
 /// * `frame` — current render frame
 /// * `area` — the 1-row `Rect` returned by `compute_layout` (index 3)
-/// * `state` — read-only app state supplying the current mode, diff mode, and loading flag
+/// * `state` — read-only app state supplying the current mode, diff mode, loading flag,
+///   and file summaries
 /// * `theme` — active color theme (supplies status bar and mode indicator colors)
 pub fn render_status_bar(frame: &mut Frame, area: Rect, state: &AppState, theme: &Theme) {
     let (mode_text, mode_fg) = match state.mode {
@@ -163,6 +165,14 @@ pub fn render_status_bar(frame: &mut Frame, area: Rect, state: &AppState, theme:
         Span::raw("  |  "),
         Span::styled(diff_mode_label, Style::default().fg(Color::DarkGray)),
     ];
+
+    if !state.file_summaries.is_empty() {
+        spans.push(Span::raw("  |  "));
+        spans.push(Span::styled(
+            format!("{} files", state.file_summaries.len()),
+            Style::default().fg(Color::DarkGray),
+        ));
+    }
 
     if state.diff_loading {
         spans.push(Span::raw("  |  "));
