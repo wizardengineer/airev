@@ -33,6 +33,7 @@ dependencies = [
  "syntect",
  "syntect-tui",
  "tokio",
+ "tokio-rusqlite",
  "toml",
 ]
 
@@ -43,6 +44,7 @@ dependencies = [
  "rusqlite",
  "tokio",
  "tokio-rusqlite",
+ "uuid",
 ]
 
 [[package]]

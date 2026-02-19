@@ -17,3 +17,4 @@ crossbeam-channel = { workspace = true }
 syntect           = { workspace = true }
 syntect-tui       = { workspace = true }
 similar           = { workspace = true }
+tokio-rusqlite    = { workspace = true }

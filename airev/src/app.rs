@@ -5,9 +5,12 @@
 //! unsaved-comment guard flag. No ratatui rendering logic lives here — `app.rs` is
 //! pure state that is read by the render module and mutated by the keybinding dispatcher.
 
+use std::collections::HashMap;
+
 use crossbeam_channel::Sender;
 use ratatui::layout::Rect;
 use ratatui::widgets::ListState;
+use tokio::sync::mpsc::UnboundedSender;
 
 use crate::git::types::{DiffMode, FileSummary, GitRequest};
 
@@ -137,6 +140,33 @@ pub struct AppState {
     /// Panel Rects [left, center, right] cached after compute_layout for mouse hit-testing.
     /// Updated every render frame.
     pub panel_rects: [Rect; 3],
+
+    // Phase 4: Persistence Layer fields
+
+    /// The tokio-rusqlite connection, cloneable for spawned async tasks.
+    ///
+    /// `None` if the database failed to open at startup. Clone is cheap
+    /// (just an Arc increment) — clone into tokio::spawn closures freely.
+    pub db_conn: Option<tokio_rusqlite::Connection>,
+
+    /// The current review session loaded/created at startup.
+    ///
+    /// `None` if no database is available. Contains session UUID, repo path,
+    /// diff mode, and timestamps.
+    pub session: Option<airev_core::types::Session>,
+
+    /// Per-file reviewed state for the current session.
+    ///
+    /// Key is the file path (repo-relative), value is whether the file is marked
+    /// as reviewed. Populated from DB at startup, updated on toggle.
+    pub file_review_states: HashMap<String, bool>,
+
+    /// Sender for the unified event channel, used by spawned async DB tasks
+    /// to send results back to the event loop.
+    ///
+    /// Follows the same pattern as `git_tx` — stored in AppState so
+    /// keybindings.rs can access it without extra parameters to handle_key().
+    pub event_tx: Option<UnboundedSender<crate::event::AppEvent>>,
 }
 
 impl Default for AppState {
@@ -169,6 +199,10 @@ impl Default for AppState {
             file_line_offsets: Vec::new(),
             git_tx: None,
             panel_rects: [Rect::default(); 3],
+            db_conn: None,
+            session: None,
+            file_review_states: HashMap::new(),
+            event_tx: None,
         }
     }
 }
@@ -404,5 +438,35 @@ impl AppState {
         self.left_pct -= left_give;
         self.right_pct -= right_give;
         self.center_pct += actual;
+    }
+
+    /// Applies a DbResultPayload to AppState.
+    ///
+    /// Called from the AppEvent::DbResult arm in main.rs. Updates session
+    /// and file review state based on the payload variant.
+    pub fn apply_db_result(&mut self, payload: crate::event::DbResultPayload) {
+        match payload {
+            crate::event::DbResultPayload::SessionLoaded(session)
+            | crate::event::DbResultPayload::SessionCreated(session) => {
+                self.session = Some(session);
+            }
+            crate::event::DbResultPayload::FileReviewStateLoaded(states) => {
+                self.file_review_states = states.into_iter().collect();
+            }
+            crate::event::DbResultPayload::ReviewToggled { file_path, reviewed } => {
+                self.file_review_states.insert(file_path, reviewed);
+            }
+        }
+    }
+
+    /// Returns the repo-relative path of the currently selected file, if any.
+    ///
+    /// Looks up `selected_file_index` in `file_summaries`. Returns `None` if
+    /// no files are loaded or the index is out of bounds.
+    pub fn current_file_path(&self) -> Option<&str> {
+        self.file_list_state
+            .selected()
+            .and_then(|idx| self.file_summaries.get(idx))
+            .map(|f| f.path.as_str())
     }
 }

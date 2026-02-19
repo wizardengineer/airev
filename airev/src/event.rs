@@ -44,9 +44,25 @@ pub enum AppEvent {
     /// Result from the git background thread.
     GitResult(Box<crate::git::types::GitResultPayload>),
     /// Result from the database background task.
-    DbResult,
+    DbResult(Box<DbResultPayload>),
     /// Quit signal (from `q` key or SIGTERM).
     Quit,
+}
+
+/// Typed results from async DB operations, sent back over the event channel.
+///
+/// Follows the same Box<Payload> pattern as GitResultPayload — keeps AppEvent
+/// variants pointer-sized on the channel regardless of payload size.
+#[derive(Debug)]
+pub enum DbResultPayload {
+    /// A session was loaded (resumed) from the database.
+    SessionLoaded(airev_core::types::Session),
+    /// A new session was created in the database.
+    SessionCreated(airev_core::types::Session),
+    /// File review states loaded for the current session.
+    FileReviewStateLoaded(Vec<(String, bool)>),
+    /// A file's reviewed state was toggled.
+    ReviewToggled { file_path: String, reviewed: bool },
 }
 
 /// Holds the sender and receiver ends of the unified event channel.
