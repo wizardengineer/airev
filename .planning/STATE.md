@@ -4,7 +4,7 @@
 - **Phase:** 04-persistence-layer (next)
 - **Milestone:** 1 (MVP)
 - **Last updated:** 2026-02-19
-- **Stopped At:** Completed 03-05-PLAN.md (Phase 3 exit criteria verified — human sign-off on real diff content, 60fps scrolling, 4 diff modes, thread safety)
+- **Stopped At:** Completed 03-06-PLAN.md (Gap closure — per-file line counts, file_line_offsets jump, status bar file count)
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -24,6 +24,7 @@
 - [x] Phase 3, Plan 03: ui/diff_view.rs (render_diff with List virtual scroll) + ui/file_tree.rs (render_file_list with FileSummary badges) + ui/mod.rs updated; placeholder builders removed
 - [x] Phase 3, Plan 04: AsyncGit wired at startup with git repo detection; AppEvent::GitResult arm; Tab diff mode cycle; Enter/l file-list jump; status bar DiffMode label + loading indicator
 - [x] Phase 3, Plan 05: Exit criteria verification — 6 automated pre-checks passed (no unsafe, cargo build 0, no E0277, Repository in worker, usize scroll, bounded slice); human-verified real diff content, 60fps scrolling, all 4 diff modes, file jump, hunk nav, no crashes
+- [x] Phase 3, Plan 06: Gap closure — FileSummary.added/removed populated with real counts; file_line_offsets field and index chain added; jump_to_selected_file uses offset lookup; status bar shows file count
 
 ## Next Step
 Execute Phase 4: Persistence Layer (`04-persistence-layer`). Begin with plan 01.
@@ -92,6 +93,11 @@ Execute Phase 4: Persistence Layer (`04-persistence-layer`). Begin with plan 01.
 - Scroll-wheel in HelpOverlay mode routes to help_scroll (not focused-panel scroll) for intuitive overlay navigation
 - Phase 3 exit criteria are compiler-enforced (no unsafe, !Send on Repository) plus human visual sign-off — not just test coverage; the compiler's type system is the authoritative thread-safety check for git2
 - Automated pre-checks (6 grep/cargo/rustc assertions) run before blocking human verification checkpoints to catch regressions before user time is spent
+- extract_files uses diff.foreach() with line_cb to count +/- origins per file (single pass, no second foreach call)
+- extract_hunks returns (hunks, file_hunk_starts) where file_hunk_starts[i] is the hunk index at the start of file i
+- file_line_offsets = file_hunk_starts mapped through hunk_offsets — no new data structure needed, reuses existing hunk offset table
+- jump_to_selected_file falls back to 0 via .get(idx).copied().unwrap_or(0) when no diff loaded yet
+- Status bar file count uses same Color::DarkGray as diff mode label; only shown when file_summaries is non-empty
 
 ### Quick Tasks Completed
 
@@ -118,4 +124,5 @@ Execute Phase 4: Persistence Layer (`04-persistence-layer`). Begin with plan 01.
 | quick | 02 | 2min | 2 | 2 |
 | quick | 03 | 6min | 2 | 8 |
 | 03-git-layer | 05 | 5min | 2 | 0 |
+| 03-git-layer | 06 | 2min | 3 | 4 |
 

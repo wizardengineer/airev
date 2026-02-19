@@ -78,7 +78,7 @@ a running session and confirm layout recomputes immediately without stale geomet
 **Goal:** The diff view renders real git content — syntax-highlighted, virtually scrolled, and
 produced by a background thread that cannot freeze the UI — across all four diff modes.
 
-**Plans:** 6 plans (5 executed + 1 gap closure)
+**Plans:** 6/6 plans complete
 
 Plans:
 - [x] 03-01-PLAN.md — Cargo deps + owned diff types (OwnedDiffHunk, FileSummary, DiffMode) + AppEvent::GitResult payload
