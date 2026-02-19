@@ -41,6 +41,9 @@ use layout::{compute_layout, inner_rect, panel_block, render_status_bar};
 pub fn render(frame: &mut Frame, state: &mut AppState, theme: &Theme) {
     let [left, center, right, status_bar] = compute_layout(frame, state);
 
+    // Cache panel rects for mouse hit-testing (updated every frame before rendering).
+    state.panel_rects = [left, center, right];
+
     // Cache viewport heights BEFORE rendering panels so they are available for the
     // next keypress cycle. Uses inner_rect() to strip the 1-cell border on each side.
     state.file_list_viewport_height = inner_rect(left).height;

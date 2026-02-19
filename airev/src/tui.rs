@@ -7,6 +7,7 @@
 //! session: the editor's extension reads stdout from `airev-mcp` while the human user
 //! sees the TUI on stderr. It also means shell pipelines (`airev | …`) remain clean.
 
+use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
 use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -36,7 +37,7 @@ pub type Tui = Terminal<CrosstermBackend<BufWriter<Stderr>>>;
 pub fn init_tui() -> std::io::Result<Tui> {
     let mut out = BufWriter::new(stderr());
     enable_raw_mode()?;
-    execute!(out, EnterAlternateScreen)?;
+    execute!(out, EnterAlternateScreen, EnableMouseCapture)?;
     Terminal::new(CrosstermBackend::new(out))
 }
 
@@ -52,7 +53,7 @@ pub fn init_tui() -> std::io::Result<Tui> {
 /// hook should use `let _ = restore_tui();` and ignore the error (best-effort only).
 pub fn restore_tui() -> std::io::Result<()> {
     disable_raw_mode()?;
-    execute!(stderr(), LeaveAlternateScreen)?;
+    execute!(stderr(), LeaveAlternateScreen, DisableMouseCapture)?;
     Ok(())
 }
 

@@ -5,7 +5,8 @@
 //! branches first on `state.mode` so that HelpOverlay, ConfirmQuit, Insert, and Normal
 //! all have isolated handler functions.
 
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
+use ratatui::layout::Position;
 
 use crate::app::{AppState, Mode, PanelFocus};
 use crate::git::types::{DiffMode, GitRequest};
@@ -281,4 +282,82 @@ fn handle_insert(key: KeyEvent, state: &mut AppState) -> KeyAction {
         }
         _ => KeyAction::Continue,
     }
+}
+
+// ---------------------------------------------------------------------------
+// Mouse events
+// ---------------------------------------------------------------------------
+
+/// Handles a mouse event: click-to-focus and scroll-wheel.
+///
+/// Left click on a panel sets focus to that panel. Scroll wheel up/down
+/// scrolls the focused panel by 3 lines (matching typical terminal scroll
+/// speed). Mouse events in HelpOverlay mode scroll the help overlay.
+///
+/// # Arguments
+///
+/// * `mouse` — the crossterm mouse event
+/// * `state` — mutable reference to all UI state
+pub fn handle_mouse(mouse: MouseEvent, state: &mut AppState) -> KeyAction {
+    match mouse.kind {
+        MouseEventKind::Down(MouseButton::Left) => {
+            handle_mouse_click(mouse.column, mouse.row, state)
+        }
+        MouseEventKind::ScrollUp => handle_mouse_scroll_up(state),
+        MouseEventKind::ScrollDown => handle_mouse_scroll_down(state),
+        _ => KeyAction::Continue,
+    }
+}
+
+/// Sets panel focus based on the clicked screen position.
+///
+/// Checks each cached panel rect in `state.panel_rects`. Panels with zero width
+/// are skipped so collapsed panels cannot receive focus via click.
+///
+/// # Arguments
+///
+/// * `col`   — column (x) of the mouse click
+/// * `row`   — row (y) of the mouse click
+/// * `state` — mutable reference to all UI state
+fn handle_mouse_click(col: u16, row: u16, state: &mut AppState) -> KeyAction {
+    let pos = Position { x: col, y: row };
+    let [left, center, right] = state.panel_rects;
+
+    if left.width > 0 && left.contains(pos) {
+        state.focus = PanelFocus::FileList;
+    } else if center.contains(pos) {
+        state.focus = PanelFocus::Diff;
+    } else if right.width > 0 && right.contains(pos) {
+        state.focus = PanelFocus::Comments;
+    }
+
+    KeyAction::Continue
+}
+
+/// Scrolls up by 3 lines. Scrolls the help overlay when in HelpOverlay mode.
+///
+/// # Arguments
+///
+/// * `state` — mutable reference to all UI state
+fn handle_mouse_scroll_up(state: &mut AppState) -> KeyAction {
+    if state.mode == Mode::HelpOverlay {
+        state.help_scroll = state.help_scroll.saturating_sub(3);
+    } else {
+        state.scroll_up(3);
+    }
+    KeyAction::Continue
+}
+
+/// Scrolls down by 3 lines. Scrolls the help overlay when in HelpOverlay mode.
+///
+/// # Arguments
+///
+/// * `state` — mutable reference to all UI state
+fn handle_mouse_scroll_down(state: &mut AppState) -> KeyAction {
+    if state.mode == Mode::HelpOverlay {
+        state.help_scroll = state.help_scroll.saturating_add(3);
+    } else {
+        state.scroll_down(3);
+    }
+    KeyAction::Continue
 }

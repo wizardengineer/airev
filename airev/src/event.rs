@@ -11,7 +11,7 @@
 //! Keeping them independent allows tuning render frequency (e.g., drop to 20 FPS
 //! on battery) without affecting logic frequency, and vice-versa.
 
-use crossterm::event::{Event, EventStream, KeyEvent, KeyEventKind};
+use crossterm::event::{Event, EventStream, KeyEvent, KeyEventKind, MouseEvent};
 use futures::{FutureExt, StreamExt};
 use std::time::Duration;
 use tokio::sync::mpsc;
@@ -31,6 +31,8 @@ pub enum AppEvent {
     /// double-firing on Windows, which synthesises both press and release for
     /// every keystroke.
     Key(KeyEvent),
+    /// A mouse event from the terminal (click, scroll, move).
+    Mouse(MouseEvent),
     /// Terminal was resized to (columns, rows).
     Resize(u16, u16),
     /// Logic tick for state updates (4 Hz / 250 ms).
@@ -121,6 +123,9 @@ pub fn spawn_event_task(tx: mpsc::UnboundedSender<AppEvent>) {
                         }
                         Some(Ok(Event::Resize(w, h))) => {
                             let _ = tx.send(AppEvent::Resize(w, h));
+                        }
+                        Some(Ok(Event::Mouse(mouse))) => {
+                            let _ = tx.send(AppEvent::Mouse(mouse));
                         }
                         _ => {}
                     }

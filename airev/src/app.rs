@@ -6,6 +6,7 @@
 //! pure state that is read by the render module and mutated by the keybinding dispatcher.
 
 use crossbeam_channel::Sender;
+use ratatui::layout::Rect;
 use ratatui::widgets::ListState;
 
 use crate::git::types::{DiffMode, FileSummary, GitRequest};
@@ -127,6 +128,10 @@ pub struct AppState {
     ///
     /// `None` when no git repository was detected at startup (graceful no-repo mode).
     pub git_tx: Option<Sender<GitRequest>>,
+
+    /// Panel Rects [left, center, right] cached after compute_layout for mouse hit-testing.
+    /// Updated every render frame.
+    pub panel_rects: [Rect; 3],
 }
 
 impl Default for AppState {
@@ -157,6 +162,7 @@ impl Default for AppState {
             selected_file_index: 0,
             hunk_cursor: 0,
             git_tx: None,
+            panel_rects: [Rect::default(); 3],
         }
     }
 }

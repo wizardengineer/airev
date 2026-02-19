@@ -31,7 +31,7 @@ mod ui;
 
 use std::sync::atomic::Ordering;
 
-use ui::keybindings::{handle_key, KeyAction};
+use ui::keybindings::{handle_key, handle_mouse, KeyAction};
 
 /// Returns the path to the airev config file.
 ///
@@ -148,6 +148,9 @@ async fn main() -> std::io::Result<()> {
                             KeyAction::Quit => break 'event_loop,
                             KeyAction::Continue => {}
                         }
+                    }
+                    Some(event::AppEvent::Mouse(mouse)) => {
+                        handle_mouse(mouse, &mut state);
                     }
                     Some(event::AppEvent::Resize(_, _)) => {
                         // Force an immediate redraw after a terminal resize so the new
