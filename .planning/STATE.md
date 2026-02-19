@@ -4,7 +4,7 @@
 - **Phase:** 03-git-layer (executing)
 - **Milestone:** 1 (MVP)
 - **Last updated:** 2026-02-18
-- **Stopped At:** Completed quick-2-PLAN.md (silent git worker errors, accurate help overlay); next: Phase 3 Plan 05
+- **Stopped At:** Completed quick-3-PLAN.md (scrollable help overlay, 3-breakpoint layout, mouse support); next: Phase 3 Plan 05
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -85,6 +85,10 @@ Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 05.
 - Status bar DiffMode label uses Color::DarkGray; loading indicator uses Color::Yellow for visual prominence
 - eprintln! removed entirely from git worker — no replacement logging added; empty payload is the correct graceful degradation signal for a TUI where stderr is the terminal backend
 - Help overlay reflects only wired keybindings — placeholder descriptions removed as soon as features ship
+- help_scroll is u16 (matching Paragraph::scroll API); u16::MAX used for G-key jump — ratatui clamps automatically
+- panel_rects cached in AppState every frame so mouse hit-testing always uses the most recent geometry
+- Overlap(1) spacing NOT applied to 80-119 layout (Length(0) + Overlap causes u16 underflow in ratatui layout engine)
+- Scroll-wheel in HelpOverlay mode routes to help_scroll (not focused-panel scroll) for intuitive overlay navigation
 
 ### Quick Tasks Completed
 
@@ -92,6 +96,7 @@ Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 05.
 |---|-------------|------|--------|-----------|
 | 1 | automated self-verification before human checkpoint and theme system for airev | 2026-02-18 | 153858c | [1-automated-self-verification-before-human](./quick/1-automated-self-verification-before-human/) |
 | 2 | fix status bar error spam from git worker; update help overlay keybindings | 2026-02-18 | 1aba9e2 | [2-fix-status-bar-error-spam-from-git-worke](./quick/2-fix-status-bar-error-spam-from-git-worke/) |
+| 3 | fix narrow terminal layout: scrollable help overlay, 3-breakpoint layout, mouse support | 2026-02-18 | addd475 | [3-fix-narrow-terminal-layout-panels-cut-of](./quick/3-fix-narrow-terminal-layout-panels-cut-of/) |
 
 ## Performance Metrics
 | Phase | Plan | Duration | Tasks | Files |
@@ -108,4 +113,5 @@ Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 05.
 | 03-git-layer | 03 | 2min | 2 | 4 |
 | 03-git-layer | 04 | 2min | 2 | 4 |
 | quick | 02 | 2min | 2 | 2 |
+| quick | 03 | 6min | 2 | 8 |
 
