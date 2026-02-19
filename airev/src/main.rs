@@ -11,9 +11,11 @@
 //!    Restores the terminal before the panic message prints.
 //! 3. `register_sigterm()` — returns `Arc<AtomicBool>` polled in the event loop.
 //! 4. `init_tui()` — enters alternate screen and enables raw mode.
-//! 5. Create event channel and `spawn_event_task()`.
-//! 6. `create_dir_all(".airev")` + `open_db()` — DB opened before first frame
-//!    so there is no "loading" state to manage.
+//! 5. Create event channel, `spawn_event_task()`, and store `event_tx` in AppState.
+//! 6. Discover git repository (needed for session detection in Step 7).
+//! 7. `create_dir_all(".airev")` + `open_db()` + `detect_or_create_session()` +
+//!    `load_file_review_state()` — all before first frame (no loading spinner).
+//! 8. Spawn AsyncGit background thread.
 //!
 //! # Safety
 //!
@@ -91,17 +93,12 @@ async fn main() -> std::io::Result<()> {
 
     // Step 4: create event channel and spawn the background event task.
     let handler = event::EventHandler::new();
+    // Store event_tx in AppState so keybindings.rs can send DB results back.
+    state.event_tx = Some(handler.tx.clone());
     event::spawn_event_task(handler.tx.clone());
     let mut rx = handler.rx;
 
-    // Step 5: open the WAL-mode SQLite database before drawing the first frame.
-    // Create the directory if it does not already exist.
-    std::fs::create_dir_all(".airev")?;
-    let _db = airev_core::db::open_db(".airev/reviews.db")
-        .await
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
-
-    // Step 6: detect git repository and spawn AsyncGit background thread.
+    // Step 5: discover git repository (needed for session detection in Step 6).
     // Walk parent directories from cwd. If no repo found, diff panel shows placeholder.
     let maybe_repo_path: Option<String> = git2::Repository::discover(".")
         .ok()
@@ -110,7 +107,35 @@ async fn main() -> std::io::Result<()> {
                 .or_else(|| Some(r.path()))
                 .map(|p| p.to_string_lossy().into_owned())
         });
+    let repo_path_for_session = maybe_repo_path.as_deref().unwrap_or(".");
 
+    // Step 6: open DB, detect/create session, load review state — all before first frame.
+    // Requirements: "no loading spinner; all reads complete before the first frame."
+    std::fs::create_dir_all(".airev")?;
+    let db_conn = airev_core::db::open_db(".airev/reviews.db")
+        .await
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
+    // Detect or create session for this repo + diff mode combination.
+    let diff_mode_str = format!("{:?}", state.diff_mode);
+    let session = airev_core::db::detect_or_create_session(
+        &db_conn,
+        repo_path_for_session,
+        &diff_mode_str,
+        "",
+    )
+    .await
+    .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
+    let review_states = airev_core::db::load_file_review_state(&db_conn, &session.id)
+        .await
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
+    state.db_conn = Some(db_conn);
+    state.file_review_states = review_states.into_iter().collect();
+    state.session = Some(session);
+
+    // Step 7: spawn AsyncGit background thread and request initial diff.
     let maybe_git: Option<crate::git::AsyncGit> = maybe_repo_path.map(|path| {
         let git = crate::git::AsyncGit::new(handler.tx.clone(), path);
         // Send the initial diff request immediately so the panel populates at startup.
@@ -160,6 +185,11 @@ async fn main() -> std::io::Result<()> {
                     Some(event::AppEvent::GitResult(payload)) => {
                         state.apply_git_result(*payload);
                         // Trigger immediate redraw after diff data arrives.
+                        handler.tx.send(event::AppEvent::Render).ok();
+                    }
+                    Some(event::AppEvent::DbResult(payload)) => {
+                        state.apply_db_result(*payload);
+                        // Trigger immediate redraw after DB state change.
                         handler.tx.send(event::AppEvent::Render).ok();
                     }
                     Some(event::AppEvent::Quit) | None => break 'event_loop,

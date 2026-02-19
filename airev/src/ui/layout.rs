@@ -174,6 +174,13 @@ pub fn render_status_bar(frame: &mut Frame, area: Rect, state: &AppState, theme:
         ));
     }
 
+    // Show session info when a session is active.
+    if let Some(ref session) = state.session {
+        spans.push(Span::raw("  |  "));
+        let session_label = format!("Session: {}...", &session.id[..8]);
+        spans.push(Span::styled(session_label, Style::default().fg(Color::DarkGray)));
+    }
+
     if state.diff_loading {
         spans.push(Span::raw("  |  "));
         spans.push(Span::styled("Computing diff...", Style::default().fg(Color::Yellow)));
