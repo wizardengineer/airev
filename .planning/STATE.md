@@ -4,7 +4,7 @@
 - **Phase:** 04-persistence-layer (in-progress)
 - **Milestone:** 1 (MVP)
 - **Last updated:** 2026-02-19
-- **Stopped At:** 04-03-PLAN.md Task 1 complete (r keybinding + checkmarks); awaiting human verification at Task 2 checkpoint
+- **Stopped At:** Phase 4 code complete; automated verification passed (2 integration tests + 5 code checks); awaiting human TUI verification
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -30,7 +30,7 @@
 - [ ] Phase 4, Plan 03: r keybinding + checkmarks (Task 1 done; Task 2 awaiting human verification)
 
 ## Next Step
-Complete Phase 4, Plan 03 human verification checkpoint (Task 2): run the TUI, press r on files, quit, confirm persistence, check DB directly.
+Human TUI verification for Phase 4: run `cargo run -p airev`, test r toggle + checkmarks + persistence across restart. Then plan Phase 5 (Comment UI).
 
 ## Phase Progress
 | Phase | Name | Status |
@@ -112,6 +112,7 @@ Complete Phase 4, Plan 03 human verification checkpoint (Task 2): run the TUI, p
 - Optimistic UI update before DB round-trip for r toggle: checkmark appears instantly in memory, ReviewToggled event confirms/corrects final state
 - r keybinding scoped to FileList focus only via guard in handle_file_list_key() match arm
 - eprintln! for DB toggle errors — stderr is terminal backend, not disruptive during normal TUI use
+- migrate() drops legacy tables when schema_version is 0 before applying v1 DDL — handles stale Phase 1 databases gracefully
 
 ### Quick Tasks Completed
 
@@ -120,6 +121,7 @@ Complete Phase 4, Plan 03 human verification checkpoint (Task 2): run the TUI, p
 | 1 | automated self-verification before human checkpoint and theme system for airev | 2026-02-18 | 153858c | [1-automated-self-verification-before-human](./quick/1-automated-self-verification-before-human/) |
 | 2 | fix status bar error spam from git worker; update help overlay keybindings | 2026-02-18 | 1aba9e2 | [2-fix-status-bar-error-spam-from-git-worke](./quick/2-fix-status-bar-error-spam-from-git-worke/) |
 | 3 | fix narrow terminal layout: scrollable help overlay, 3-breakpoint layout, mouse support | 2026-02-18 | addd475 | [3-fix-narrow-terminal-layout-panels-cut-of](./quick/3-fix-narrow-terminal-layout-panels-cut-of/) |
+| 4 | verify phase 4 persistence layer end-to-end: build, schema, migration, review toggle | 2026-02-19 | 65b229f | [4-verify-phase-4-persistence-layer-end-to-](./quick/4-verify-phase-4-persistence-layer-end-to-/) |
 
 ## Performance Metrics
 | Phase | Plan | Duration | Tasks | Files |
