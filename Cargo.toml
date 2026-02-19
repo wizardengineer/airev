@@ -18,3 +18,4 @@ crossbeam-channel = "0.5"
 syntect           = { version = "5.3", default-features = false, features = ["default-fancy"] }
 syntect-tui       = "3.0"
 similar           = { version = "2.7", features = ["inline"] }
+uuid              = { version = "1", features = ["v4"] }

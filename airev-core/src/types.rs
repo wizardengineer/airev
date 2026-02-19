@@ -1,26 +1,48 @@
-/// A review session tied to a specific repository path.
+/// A review session tied to a specific repository, diff mode, and arguments.
+///
+/// Sessions are keyed by UUID v4 text. Each unique combination of `repo_path`,
+/// `diff_mode`, and `diff_args` produces a separate session on first launch;
+/// subsequent launches resume the most-recent matching session.
 #[derive(Debug, Clone)]
 pub struct Session {
-    pub id: i64,
+    pub id: String,           // UUID v4 text
     pub repo_path: String,
-    pub created_at: i64,      // Unix timestamp
-    pub last_opened_at: i64,  // Unix timestamp
+    pub diff_mode: String,
+    pub diff_args: String,
+    pub created_at: i64,      // Unix timestamp seconds
+    pub updated_at: i64,      // Unix timestamp seconds
 }
 
 /// A single comment attached to a hunk or line within a session.
+///
+/// Comments may optionally belong to a `thread_id` (multi-round review, Phase 7).
+/// `comment_type` is one of: question, concern, til, suggestion, praise, nitpick.
+/// `severity` is one of: critical, major, minor, info.
 #[derive(Debug, Clone)]
 pub struct Comment {
-    pub id: i64,
-    pub session_id: i64,
-    pub thread_id: i64,
+    pub id: String,           // UUID v4 text
+    pub session_id: String,
     pub file_path: String,
-    pub hunk_id: Option<String>,
     pub line_number: Option<i64>,
-    pub comment_type: String,  // question/concern/til/suggestion/praise/nitpick
-    pub severity: String,      // critical/major/minor/info
+    pub hunk_offset: Option<i64>,
+    pub comment_type: String,
+    pub severity: String,
     pub body: String,
     pub created_at: i64,
     pub resolved_at: Option<i64>,
+    pub thread_id: Option<String>,
+}
+
+/// Per-file reviewed state within a session.
+///
+/// Toggled by the user via the `r` keybinding in the file list panel.
+/// `reviewed_at` is set when `reviewed` transitions to `true`, cleared on untoggle.
+#[derive(Debug, Clone)]
+pub struct FileReviewState {
+    pub session_id: String,
+    pub file_path: String,
+    pub reviewed: bool,
+    pub reviewed_at: Option<i64>,
 }
 
 /// A diff hunk with metadata for display and persistence.
