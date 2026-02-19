@@ -1,10 +1,10 @@
 # Project State
 
 ## Current Status
-- **Phase:** 03-git-layer (executing)
+- **Phase:** 04-persistence-layer (next)
 - **Milestone:** 1 (MVP)
-- **Last updated:** 2026-02-18
-- **Stopped At:** Completed quick-3-PLAN.md (scrollable help overlay, 3-breakpoint layout, mouse support); next: Phase 3 Plan 05
+- **Last updated:** 2026-02-19
+- **Stopped At:** Completed 03-05-PLAN.md (Phase 3 exit criteria verified — human sign-off on real diff content, 60fps scrolling, 4 diff modes, thread safety)
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -23,16 +23,17 @@
 - [x] Phase 3, Plan 02: AsyncGit worker thread (git_worker_loop, 4 diff modes, syntect highlighting, word-level diff via similar) + AppState Phase 3 fields (diff_lines, diff_scroll: usize, file_summaries, diff_mode, diff_loading, hunk_offsets, selected_file_index, hunk_cursor)
 - [x] Phase 3, Plan 03: ui/diff_view.rs (render_diff with List virtual scroll) + ui/file_tree.rs (render_file_list with FileSummary badges) + ui/mod.rs updated; placeholder builders removed
 - [x] Phase 3, Plan 04: AsyncGit wired at startup with git repo detection; AppEvent::GitResult arm; Tab diff mode cycle; Enter/l file-list jump; status bar DiffMode label + loading indicator
+- [x] Phase 3, Plan 05: Exit criteria verification — 6 automated pre-checks passed (no unsafe, cargo build 0, no E0277, Repository in worker, usize scroll, bounded slice); human-verified real diff content, 60fps scrolling, all 4 diff modes, file jump, hunk nav, no crashes
 
 ## Next Step
-Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 05.
+Execute Phase 4: Persistence Layer (`04-persistence-layer`). Begin with plan 01.
 
 ## Phase Progress
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Foundation | in-progress (3/4 plans done) |
 | 2 | Rendering Skeleton | complete (3/3 plans done) |
-| 3 | Git Layer | in-progress (4/5 plans done) |
+| 3 | Git Layer | complete (5/5 plans done) |
 | 4 | Persistence Layer | pending |
 | 5 | Comment UI | pending |
 | 6 | Live File Watcher | pending |
@@ -89,6 +90,8 @@ Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 05.
 - panel_rects cached in AppState every frame so mouse hit-testing always uses the most recent geometry
 - Overlap(1) spacing NOT applied to 80-119 layout (Length(0) + Overlap causes u16 underflow in ratatui layout engine)
 - Scroll-wheel in HelpOverlay mode routes to help_scroll (not focused-panel scroll) for intuitive overlay navigation
+- Phase 3 exit criteria are compiler-enforced (no unsafe, !Send on Repository) plus human visual sign-off — not just test coverage; the compiler's type system is the authoritative thread-safety check for git2
+- Automated pre-checks (6 grep/cargo/rustc assertions) run before blocking human verification checkpoints to catch regressions before user time is spent
 
 ### Quick Tasks Completed
 
@@ -114,4 +117,5 @@ Execute Phase 3: Git Layer (`03-git-layer`). Continue with plan 05.
 | 03-git-layer | 04 | 2min | 2 | 4 |
 | quick | 02 | 2min | 2 | 2 |
 | quick | 03 | 6min | 2 | 8 |
+| 03-git-layer | 05 | 5min | 2 | 0 |
 
