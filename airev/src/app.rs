@@ -123,6 +123,11 @@ pub struct AppState {
     pub selected_file_index: usize,
     /// Current hunk offset cursor index (index into hunk_offsets, not line number).
     pub hunk_cursor: usize,
+    /// Per-file starting line offsets in diff_lines, for file-list jump navigation.
+    ///
+    /// `file_line_offsets[i]` is the line index in `diff_lines` where file `i`'s
+    /// first hunk header appears. Populated from `GitResultPayload.file_line_offsets`.
+    pub file_line_offsets: Vec<usize>,
 
     /// Channel sender to the git background thread, for keybinding-driven requests.
     ///
@@ -161,6 +166,7 @@ impl Default for AppState {
             hunk_offsets: Vec::new(),
             selected_file_index: 0,
             hunk_cursor: 0,
+            file_line_offsets: Vec::new(),
             git_tx: None,
             panel_rects: [Rect::default(); 3],
         }
@@ -338,6 +344,7 @@ impl AppState {
         self.file_summaries = payload.files;
         self.diff_lines = payload.highlighted_lines;
         self.hunk_offsets = payload.hunk_offsets;
+        self.file_line_offsets = payload.file_line_offsets;
         self.diff_loading = false;
         if mode_changed {
             self.diff_scroll = 0;
@@ -345,13 +352,15 @@ impl AppState {
         }
     }
 
-    /// Jumps diff view to the selected file (Enter or l on file list).
+    /// Jumps diff view to the selected file's first hunk (Enter or l on file list).
     ///
-    /// Updates selected_file_index and resets diff_scroll to 0.
+    /// Updates selected_file_index and sets diff_scroll to the file's first hunk
+    /// header line using `file_line_offsets`. Falls back to 0 if the index is
+    /// out of range (e.g. no diff loaded yet).
     pub fn jump_to_selected_file(&mut self) {
         if let Some(idx) = self.file_list_state.selected() {
             self.selected_file_index = idx;
-            self.diff_scroll = 0;
+            self.diff_scroll = self.file_line_offsets.get(idx).copied().unwrap_or(0);
             self.hunk_cursor = 0;
             self.focus = PanelFocus::Diff;
         }

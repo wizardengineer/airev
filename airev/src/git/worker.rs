@@ -69,6 +69,7 @@ fn handle_request(repo: &Repository, request: GitRequest) -> GitResultPayload {
             files: Vec::new(),
             highlighted_lines: Vec::new(),
             hunk_offsets: Vec::new(),
+            file_line_offsets: Vec::new(),
         },
     }
 }
@@ -127,21 +128,32 @@ fn get_diff_for_range<'a>(
 /// Extracts hunks + files from a Diff and builds highlighted lines.
 ///
 /// Orchestrates extract_hunks, extract_files, and highlight_hunks into the final payload.
+/// `file_hunk_starts` from `extract_hunks` is mapped through `hunk_offsets` to produce
+/// `file_line_offsets` — the line index in `highlighted_lines` where each file begins.
 fn process_diff(mode: DiffMode, diff: &Diff<'_>) -> GitResultPayload {
-    let hunks = extract_hunks(diff);
+    let (hunks, file_hunk_starts) = extract_hunks(diff);
     let files = extract_files(diff);
     let ext = files.first().map(|f| file_ext(&f.path)).unwrap_or("txt");
     let (highlighted_lines, hunk_offsets) = highlight_hunks(&hunks, ext);
 
-    GitResultPayload { mode, hunks, files, highlighted_lines, hunk_offsets }
+    let file_line_offsets: Vec<usize> = file_hunk_starts
+        .iter()
+        .map(|&hunk_idx| hunk_offsets.get(hunk_idx).copied().unwrap_or(0))
+        .collect();
+
+    GitResultPayload { mode, hunks, files, highlighted_lines, hunk_offsets, file_line_offsets }
 }
 
 /// Walks diff hunks and lines, converting to owned types for cross-thread transfer.
 ///
 /// Each git2::DiffHunk and git2::DiffLine is converted to owned types
 /// (String, u32, char) inside the foreach callbacks before returning.
-/// Uses std::cell::Cell-based indexing to avoid two-mutable-borrow restrictions.
-fn extract_hunks(diff: &Diff<'_>) -> Vec<OwnedDiffHunk> {
+/// Uses RefCell to share mutable access between closures on the same thread.
+///
+/// Returns `(hunks, file_hunk_starts)` where `file_hunk_starts[i]` is the index
+/// into the returned hunk vec where file `i`'s first hunk begins. This is used by
+/// `process_diff` to map file indices to line offsets via `hunk_offsets`.
+fn extract_hunks(diff: &Diff<'_>) -> (Vec<OwnedDiffHunk>, Vec<usize>) {
     use std::cell::RefCell;
 
     // RefCell allows the two closures to share mutable access to the hunk list
@@ -149,9 +161,13 @@ fn extract_hunks(diff: &Diff<'_>) -> Vec<OwnedDiffHunk> {
     // same thread sequentially (git2's contract), so RefCell's single-writer
     // invariant is always satisfied at runtime.
     let hunks: RefCell<Vec<OwnedDiffHunk>> = RefCell::new(Vec::new());
+    let file_hunk_starts: RefCell<Vec<usize>> = RefCell::new(Vec::new());
 
     let _ = diff.foreach(
-        &mut |_, _| true,
+        &mut |_delta, _progress| {
+            file_hunk_starts.borrow_mut().push(hunks.borrow().len());
+            true
+        },
         None,
         Some(&mut |_delta, hunk| {
             let header = String::from_utf8_lossy(hunk.header()).into_owned();
@@ -177,7 +193,7 @@ fn extract_hunks(diff: &Diff<'_>) -> Vec<OwnedDiffHunk> {
         }),
     );
 
-    hunks.into_inner()
+    (hunks.into_inner(), file_hunk_starts.into_inner())
 }
 
 /// Collects per-file status info and real added/removed line counts from diff deltas.

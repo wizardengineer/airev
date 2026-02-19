@@ -116,4 +116,10 @@ pub struct GitResultPayload {
     ///
     /// Used by `[` / `]` keybindings to jump between hunks.
     pub hunk_offsets: Vec<usize>,
+    /// Starting line index in `highlighted_lines` for each file.
+    ///
+    /// `file_line_offsets[i]` is the line index where file `i`'s first hunk header
+    /// appears in `highlighted_lines`. Used by `jump_to_selected_file()` to scroll
+    /// the diff panel to the correct position.
+    pub file_line_offsets: Vec<usize>,
 }
