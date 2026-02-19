@@ -120,6 +120,13 @@ confirm the compiler accepts the code without `unsafe`).
 **Goal:** Every session and comment survives restart, the multi-round thread schema is in place,
 and the DB is exercised enough to validate the write paths before the MCP server is built on top.
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Rewrite airev-core schema (UUID text IDs, schema_version, v1 DDL) + types + DB functions
+- [ ] 04-02-PLAN.md — Expand AppEvent::DbResult to typed payload + AppState DB fields + startup session lifecycle
+- [ ] 04-03-PLAN.md — Wire r keybinding for file review toggle + checkmark rendering + exit criteria verification
+
 **Delivers:**
 - DB schema (in `airev-core`) finalized for multi-round threads: `sessions` table (id, repo_path,
   created_at, last_opened_at), `comments` table (id, session_id, thread_id, file_path, hunk_id,
