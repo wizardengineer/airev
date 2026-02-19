@@ -84,6 +84,8 @@ pub struct AppState {
     pub diff_scroll: usize,
     /// Vertical scroll offset for the comments `Paragraph` widget (right panel).
     pub comments_scroll: u16,
+    /// Vertical scroll offset for the help overlay Paragraph. Reset to 0 when entering help mode.
+    pub help_scroll: u16,
 
     /// Inner height of the diff panel after borders, cached after each render.
     /// Used by half-page and full-page scroll calculations.
@@ -139,6 +141,7 @@ impl Default for AppState {
             file_list_state: ListState::default(),
             diff_scroll: 0,
             comments_scroll: 0,
+            help_scroll: 0,
             diff_viewport_height: 0,
             comments_viewport_height: 0,
             file_list_viewport_height: 0,

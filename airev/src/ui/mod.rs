@@ -68,7 +68,7 @@ pub fn render(frame: &mut Frame, state: &mut AppState, theme: &Theme) {
     // Help overlay: rendered after all panels so it sits on top.
     // Clear is called inside render_help_overlay() to erase the background.
     if state.mode == Mode::HelpOverlay {
-        help::render_help_overlay(frame, theme);
+        help::render_help_overlay(frame, theme, state.help_scroll);
     }
 }
 

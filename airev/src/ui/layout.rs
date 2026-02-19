@@ -6,14 +6,19 @@
 //!
 //! # Panel geometry
 //!
-//! At `>= 120` columns all three panels are visible with widths driven by
-//! `AppState.left_pct / center_pct / right_pct` (defaults 20 / 55 / 25).
-//! Below 120 columns both side panels collapse and the diff fills the full width.
-//! Below 80 columns the same collapse applies (minimum viable single-panel display).
+//! Three breakpoints govern the horizontal layout:
+//!
+//! | Terminal width | Panels visible | Notes |
+//! |----------------|----------------|-------|
+//! | `>= 120` cols  | File list + Diff + Comments | Full 3-panel; widths from `left_pct/center_pct/right_pct` |
+//! | `80..=119` cols | File list + Diff | Comments panel hidden; file list gets 25%, diff fills the rest |
+//! | `< 80` cols    | Diff only | Both side panels collapsed to width 0 |
 //!
 //! `Spacing::Overlap(1)` combined with `Block::merge_borders(MergeStrategy::Fuzzy)`
 //! makes adjacent panel borders share a single column and merge their corner/junction
-//! Unicode box-drawing characters automatically.
+//! Unicode box-drawing characters automatically. Overlap is NOT used on the 80-119
+//! layout because `Length(0)` panels with overlap cause u16 underflow in ratatui's
+//! layout engine.
 
 use ratatui::{
     Frame,
@@ -37,8 +42,9 @@ use crate::theme::Theme;
 ///
 /// | Terminal width | Layout |
 /// |----------------|--------|
-/// | `< 120` cols   | Side panels collapsed; diff fills full width |
 /// | `>= 120` cols  | 3-panel split using `state.left_pct / center_pct / right_pct` |
+/// | `80..=119` cols | File list (25%) + Diff (fill); comments panel hidden |
+/// | `< 80` cols    | Diff only; both side panels collapsed |
 ///
 /// # Arguments
 ///
@@ -51,18 +57,26 @@ pub fn compute_layout(frame: &Frame, state: &AppState) -> [Rect; 4] {
     let [main_area, status_bar] =
         frame.area().layout(&Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]));
 
-    // Horizontal split: collapse side panels when terminal is narrow.
+    // Horizontal split: 3-breakpoint responsive layout.
     let horizontal = if term_width >= 120 {
+        // Full 3-panel layout with border overlap for clean junctions.
         Layout::horizontal([
             Constraint::Percentage(state.left_pct),
             Constraint::Percentage(state.center_pct),
             Constraint::Percentage(state.right_pct),
         ])
         .spacing(Spacing::Overlap(1))
+    } else if term_width >= 80 {
+        // Medium width: show file list (25%) + diff, hide comments.
+        // Do NOT use Spacing::Overlap here — Length(0) right panel + Overlap(1) causes
+        // u16 underflow in ratatui's layout engine (0 - 1 wraps to u16::MAX).
+        Layout::horizontal([
+            Constraint::Percentage(25),
+            Constraint::Fill(1),
+            Constraint::Length(0),
+        ])
     } else {
-        // Both < 80 and 80..119 collapse side panels.
-        // Do NOT use Spacing::Overlap here — Length(0) + Overlap(1) causes u16 underflow
-        // in ratatui's layout engine (0 - 1 wraps to u16::MAX, producing an invalid Rect).
+        // Narrow: diff-only layout. No overlap (same underflow risk applies).
         Layout::horizontal([
             Constraint::Length(0),
             Constraint::Fill(1),

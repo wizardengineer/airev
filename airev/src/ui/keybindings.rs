@@ -89,7 +89,11 @@ fn handle_normal(key: KeyEvent, state: &mut AppState) -> KeyAction {
         KeyCode::Char('>') => { state.grow_diff_panel(); KeyAction::Continue }
 
         // Help overlay
-        KeyCode::Char('?') => { state.mode = Mode::HelpOverlay; KeyAction::Continue }
+        KeyCode::Char('?') => {
+            state.help_scroll = 0;
+            state.mode = Mode::HelpOverlay;
+            KeyAction::Continue
+        }
 
         // Quit / confirm-quit
         KeyCode::Char('q') | KeyCode::Esc => {
@@ -208,6 +212,22 @@ fn handle_scroll_key(key: KeyEvent, state: &mut AppState) -> Option<KeyAction> {
 /// * `state` — mutable reference to all UI state
 fn handle_help(key: KeyEvent, state: &mut AppState) -> KeyAction {
     match key.code {
+        KeyCode::Char('j') => {
+            state.help_scroll = state.help_scroll.saturating_add(1);
+            KeyAction::Continue
+        }
+        KeyCode::Char('k') => {
+            state.help_scroll = state.help_scroll.saturating_sub(1);
+            KeyAction::Continue
+        }
+        KeyCode::Char('g') => {
+            state.help_scroll = 0;
+            KeyAction::Continue
+        }
+        KeyCode::Char('G') => {
+            state.help_scroll = u16::MAX;
+            KeyAction::Continue
+        }
         KeyCode::Char('?') | KeyCode::Esc | KeyCode::Char('q') => {
             state.mode = Mode::Normal;
             KeyAction::Continue
