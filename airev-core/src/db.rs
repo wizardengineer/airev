@@ -1,6 +1,5 @@
 use std::time::Duration;
 use tokio_rusqlite::Connection;
-use crate::schema::SCHEMA_SQL;
 
 /// Opens (or creates) the SQLite database at `path`, configures WAL mode,
 /// and applies the schema migrations.
@@ -33,14 +32,9 @@ pub async fn open_db(path: &str) -> Result<Connection, tokio_rusqlite::Error> {
     })
     .await?;
 
-    // Step 3: Apply schema DDL inside a BEGIN IMMEDIATE transaction.
-    // All write transactions use BEGIN IMMEDIATE per locked requirements.
+    // Step 3: Apply schema migrations via schema_version versioning system.
     conn.call(|db| {
-        let tx = db.transaction_with_behavior(
-            rusqlite::TransactionBehavior::Immediate,
-        )?;
-        tx.execute_batch(SCHEMA_SQL)?;
-        tx.commit()?;
+        crate::schema::migrate(db)?;
         Ok(())
     })
     .await?;
