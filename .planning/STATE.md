@@ -4,7 +4,7 @@
 - **Phase:** 04-persistence-layer (in-progress)
 - **Milestone:** 1 (MVP)
 - **Last updated:** 2026-02-19
-- **Stopped At:** Completed 04-02-PLAN.md (DbResultPayload typed event, AppState db_conn/session/file_review_states/event_tx fields, startup session lifecycle, DbResult event arm, session UUID in status bar)
+- **Stopped At:** 04-03-PLAN.md Task 1 complete (r keybinding + checkmarks); awaiting human verification at Task 2 checkpoint
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -27,9 +27,10 @@
 - [x] Phase 3, Plan 06: Gap closure — FileSummary.added/removed populated with real counts; file_line_offsets field and index chain added; jump_to_selected_file uses offset lookup; status bar shows file count
 - [x] Phase 4, Plan 01: v1 schema (sessions/comments/file_review_state/threads with UUID text PKs) + schema_version migration system + detect_or_create_session/load_file_review_state/toggle_file_reviewed/update_session_timestamp
 - [x] Phase 4, Plan 02: DbResultPayload typed event variant + AppState db_conn/session/file_review_states/event_tx fields + startup session detect-or-create before first frame + DbResult event arm + session UUID in status bar
+- [ ] Phase 4, Plan 03: r keybinding + checkmarks (Task 1 done; Task 2 awaiting human verification)
 
 ## Next Step
-Execute Phase 4: Persistence Layer (`04-persistence-layer`). Continue with plan 03.
+Complete Phase 4, Plan 03 human verification checkpoint (Task 2): run the TUI, press r on files, quit, confirm persistence, check DB directly.
 
 ## Phase Progress
 | Phase | Name | Status |
@@ -37,7 +38,7 @@ Execute Phase 4: Persistence Layer (`04-persistence-layer`). Continue with plan 
 | 1 | Foundation | in-progress (3/4 plans done) |
 | 2 | Rendering Skeleton | complete (3/3 plans done) |
 | 3 | Git Layer | complete (5/5 plans done) |
-| 4 | Persistence Layer | in-progress (2/3 plans done) |
+| 4 | Persistence Layer | in-progress (2/3 plans done — Task 1 of plan 03 done, checkpoint pending) |
 | 5 | Comment UI | pending |
 | 6 | Live File Watcher | pending |
 | 7 | MCP Server | pending |
@@ -108,6 +109,9 @@ Execute Phase 4: Persistence Layer (`04-persistence-layer`). Continue with plan 
 - threads table included in SCHEMA_V1_SQL from day one (not deferred to Phase 7) to satisfy exit criterion SELECT * FROM threads
 - busy_timeout changed from 10s to 5s per research recommendation for MCP concurrent access
 - schema_version table approach used for migrations (not rusqlite_migration crate or user_version PRAGMA) — locked by requirements
+- Optimistic UI update before DB round-trip for r toggle: checkmark appears instantly in memory, ReviewToggled event confirms/corrects final state
+- r keybinding scoped to FileList focus only via guard in handle_file_list_key() match arm
+- eprintln! for DB toggle errors — stderr is terminal backend, not disruptive during normal TUI use
 
 ### Quick Tasks Completed
 
@@ -137,4 +141,5 @@ Execute Phase 4: Persistence Layer (`04-persistence-layer`). Continue with plan 
 | 03-git-layer | 06 | 2min | 3 | 4 |
 | Phase 04-persistence-layer P01 | 3min | 2 tasks | 5 files |
 | 04-persistence-layer | 02 | 4min | 2 | 5 |
+| Phase 04-persistence-layer P03 | 5min | 1 tasks | 3 files |
 

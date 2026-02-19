@@ -120,7 +120,7 @@ confirm the compiler accepts the code without `unsafe`).
 **Goal:** Every session and comment survives restart, the multi-round thread schema is in place,
 and the DB is exercised enough to validate the write paths before the MCP server is built on top.
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 04-01-PLAN.md — Rewrite airev-core schema (UUID text IDs, schema_version, v1 DDL) + types + DB functions
