@@ -75,6 +75,7 @@ fn build_help_text() -> Text<'static> {
         Line::from("File List"),
         Line::from("  { / }         Previous / next file"),
         Line::from("  Enter / l     Jump to selected file in diff view"),
+        Line::from("  r             Toggle file reviewed (file list)"),
         Line::from(""),
         Line::from("Diff View"),
         Line::from("  [ / ]         Previous / next hunk"),

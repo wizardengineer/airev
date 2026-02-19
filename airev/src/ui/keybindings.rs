@@ -9,6 +9,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent,
 use ratatui::layout::Position;
 
 use crate::app::{AppState, Mode, PanelFocus};
+use crate::event::{AppEvent, DbResultPayload};
 use crate::git::types::{DiffMode, GitRequest};
 
 /// Control-flow signal returned from the key dispatcher.
@@ -128,6 +129,12 @@ fn handle_file_list_key(key: KeyEvent, state: &mut AppState) -> Option<KeyAction
             Some(KeyAction::Continue)
         }
 
+        // Toggle file reviewed state (r key, file list panel only).
+        KeyCode::Char('r') if state.focus == PanelFocus::FileList => {
+            handle_toggle_review(state);
+            Some(KeyAction::Continue)
+        }
+
         // Tab cycles the diff mode regardless of focused panel, then sends a new request.
         KeyCode::Tab => {
             let next_mode = match state.diff_mode {
@@ -147,6 +154,51 @@ fn handle_file_list_key(key: KeyEvent, state: &mut AppState) -> Option<KeyAction
 
         _ => None,
     }
+}
+
+/// Spawns an async DB task to toggle the reviewed state of the currently selected file.
+///
+/// Clones `db_conn` and `event_tx` from AppState (both are cheap Arc clones), then
+/// spawns a tokio task that calls `toggle_file_reviewed()` and sends the result back
+/// as `AppEvent::DbResult(DbResultPayload::ReviewToggled)`. Does nothing if no DB
+/// connection, no session, or no file is selected.
+fn handle_toggle_review(state: &mut AppState) {
+    let conn = match state.db_conn.as_ref() {
+        Some(c) => c.clone(),
+        None => return,
+    };
+    let session_id = match state.session.as_ref() {
+        Some(s) => s.id.clone(),
+        None => return,
+    };
+    let file_path = match state.current_file_path() {
+        Some(p) => p.to_owned(),
+        None => return,
+    };
+    let tx = match state.event_tx.as_ref() {
+        Some(t) => t.clone(),
+        None => return,
+    };
+
+    // Optimistic UI update: toggle immediately in memory so the checkmark
+    // appears before the DB round-trip completes.
+    let current = state.file_review_states.get(&file_path).copied().unwrap_or(false);
+    state.file_review_states.insert(file_path.clone(), !current);
+
+    tokio::spawn(async move {
+        match airev_core::db::toggle_file_reviewed(&conn, &session_id, &file_path).await {
+            Ok(reviewed) => {
+                let _ = tx.send(AppEvent::DbResult(Box::new(
+                    DbResultPayload::ReviewToggled { file_path, reviewed },
+                )));
+            }
+            Err(e) => {
+                // Log to stderr (the terminal backend) — visible in debug but not
+                // disruptive in normal use since stderr IS the terminal.
+                eprintln!("airev: DB toggle error: {e}");
+            }
+        }
+    });
 }
 
 /// Handles scroll-related keys in Normal mode: j / k / g / G and Ctrl combos.

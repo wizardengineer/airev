@@ -48,7 +48,10 @@ pub fn render_file_list(
         let msg = if state.diff_loading { "Loading..." } else { "No files" };
         vec![ListItem::new(Line::raw(msg))]
     } else {
-        state.file_summaries.iter().map(|f| file_summary_item(f, theme)).collect()
+        state.file_summaries.iter().map(|f| {
+            let reviewed = state.file_review_states.get(&f.path).copied().unwrap_or(false);
+            file_summary_item(f, reviewed, theme)
+        }).collect()
     };
 
     let list = List::new(items)
@@ -60,9 +63,15 @@ pub fn render_file_list(
 
 /// Converts a FileSummary into a styled ListItem.
 ///
-/// Format: `[M] src/main.rs  +42 -7`
+/// Format: `[x] [M] src/main.rs  +42 -7` when reviewed, `[ ] [M] src/...` when not.
 /// Badge colors: M=Yellow, A=Green, D=Red, R=Cyan.
-fn file_summary_item(f: &FileSummary, _theme: &Theme) -> ListItem<'static> {
+/// Review mark colors: reviewed=Green, unreviewed=DarkGray.
+fn file_summary_item(f: &FileSummary, reviewed: bool, _theme: &Theme) -> ListItem<'static> {
+    let review_mark = if reviewed {
+        Span::styled("[x] ", Style::default().fg(Color::Green))
+    } else {
+        Span::styled("[ ] ", Style::default().fg(Color::DarkGray))
+    };
     let badge_color = match f.status {
         'A' => Color::Green,
         'D' => Color::Red,
@@ -89,5 +98,5 @@ fn file_summary_item(f: &FileSummary, _theme: &Theme) -> ListItem<'static> {
     } else {
         Span::raw("")
     };
-    ListItem::new(Line::from(vec![badge, path_span, counts]))
+    ListItem::new(Line::from(vec![review_mark, badge, path_span, counts]))
 }
