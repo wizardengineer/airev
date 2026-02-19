@@ -107,5 +107,13 @@ None - no external service configuration required.
 - Phase 3 Git Layer is fully complete and verified; Phase 4 Persistence Layer can begin
 
 ---
+## Self-Check: PASSED
+
+All files verified present on disk. All task commits confirmed in git log:
+- `bbdb834` feat(03-06): populate per-file added/removed line counts in extract_files
+- `71b203f` feat(03-06): compute file_line_offsets and fix jump_to_selected_file
+- `67ebffa` feat(03-06): add file count span to render_status_bar
+- `7a368ea` docs(03-06): complete gap-closure plan for File List Panel requirement
+
 *Phase: 03-git-layer*
 *Completed: 2026-02-19*
