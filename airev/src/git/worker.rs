@@ -180,12 +180,19 @@ fn extract_hunks(diff: &Diff<'_>) -> Vec<OwnedDiffHunk> {
     hunks.into_inner()
 }
 
-/// Collects per-file status info from diff deltas.
+/// Collects per-file status info and real added/removed line counts from diff deltas.
 ///
-/// Line counts (added/removed) are left as 0; the file-list panel shows path + status.
+/// Uses `diff.foreach()` with all four callbacks so that line-origin characters
+/// (`'+'` / `'-'`) are counted per file in a single pass. The `file_cb` callback
+/// fires once per delta (file) in order, so `files.last_mut()` in the line callback
+/// always refers to the correct current file.
 fn extract_files(diff: &Diff<'_>) -> Vec<FileSummary> {
-    diff.deltas()
-        .map(|delta| {
+    use std::cell::RefCell;
+
+    let files: RefCell<Vec<FileSummary>> = RefCell::new(Vec::new());
+
+    let _ = diff.foreach(
+        &mut |delta, _progress| {
             let path = delta
                 .new_file()
                 .path()
@@ -198,9 +205,25 @@ fn extract_files(diff: &Diff<'_>) -> Vec<FileSummary> {
                 Delta::Renamed => 'R',
                 _ => 'M',
             };
-            FileSummary { path, status, added: 0, removed: 0 }
-        })
-        .collect()
+            files.borrow_mut().push(FileSummary { path, status, added: 0, removed: 0 });
+            true
+        },
+        None,
+        None,
+        Some(&mut |_delta, _hunk, line| {
+            let mut files = files.borrow_mut();
+            if let Some(f) = files.last_mut() {
+                match line.origin() {
+                    '+' => f.added += 1,
+                    '-' => f.removed += 1,
+                    _ => {}
+                }
+            }
+            true
+        }),
+    );
+
+    files.into_inner()
 }
 
 /// Converts a syntect (Style, &str) pair to an owned ratatui Span.
