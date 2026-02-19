@@ -1,10 +1,10 @@
 # Project State
 
 ## Current Status
-- **Phase:** 04-persistence-layer (next)
+- **Phase:** 04-persistence-layer (in-progress)
 - **Milestone:** 1 (MVP)
 - **Last updated:** 2026-02-19
-- **Stopped At:** Completed 04-01-PLAN.md (v1 schema with UUID text IDs, migrate(), open_db() calling migrate(), detect_or_create_session/load_file_review_state/toggle_file_reviewed/update_session_timestamp)
+- **Stopped At:** Completed 04-02-PLAN.md (DbResultPayload typed event, AppState db_conn/session/file_review_states/event_tx fields, startup session lifecycle, DbResult event arm, session UUID in status bar)
 
 ## Completed
 - [x] Project initialized (`PROJECT.md`)
@@ -26,9 +26,10 @@
 - [x] Phase 3, Plan 05: Exit criteria verification — 6 automated pre-checks passed (no unsafe, cargo build 0, no E0277, Repository in worker, usize scroll, bounded slice); human-verified real diff content, 60fps scrolling, all 4 diff modes, file jump, hunk nav, no crashes
 - [x] Phase 3, Plan 06: Gap closure — FileSummary.added/removed populated with real counts; file_line_offsets field and index chain added; jump_to_selected_file uses offset lookup; status bar shows file count
 - [x] Phase 4, Plan 01: v1 schema (sessions/comments/file_review_state/threads with UUID text PKs) + schema_version migration system + detect_or_create_session/load_file_review_state/toggle_file_reviewed/update_session_timestamp
+- [x] Phase 4, Plan 02: DbResultPayload typed event variant + AppState db_conn/session/file_review_states/event_tx fields + startup session detect-or-create before first frame + DbResult event arm + session UUID in status bar
 
 ## Next Step
-Execute Phase 4: Persistence Layer (`04-persistence-layer`). Continue with plan 02.
+Execute Phase 4: Persistence Layer (`04-persistence-layer`). Continue with plan 03.
 
 ## Phase Progress
 | Phase | Name | Status |
@@ -36,7 +37,7 @@ Execute Phase 4: Persistence Layer (`04-persistence-layer`). Continue with plan 
 | 1 | Foundation | in-progress (3/4 plans done) |
 | 2 | Rendering Skeleton | complete (3/3 plans done) |
 | 3 | Git Layer | complete (5/5 plans done) |
-| 4 | Persistence Layer | in-progress (1/3 plans done) |
+| 4 | Persistence Layer | in-progress (2/3 plans done) |
 | 5 | Comment UI | pending |
 | 6 | Live File Watcher | pending |
 | 7 | MCP Server | pending |
@@ -90,6 +91,10 @@ Execute Phase 4: Persistence Layer (`04-persistence-layer`). Continue with plan 
 - Help overlay reflects only wired keybindings — placeholder descriptions removed as soon as features ship
 - help_scroll is u16 (matching Paragraph::scroll API); u16::MAX used for G-key jump — ratatui clamps automatically
 - panel_rects cached in AppState every frame so mouse hit-testing always uses the most recent geometry
+- tokio-rusqlite added to airev/Cargo.toml explicitly (was in workspace.dependencies but not referenced from the binary crate)
+- Git repo discovery moved before DB open in main.rs startup sequence — repo_path needed for detect_or_create_session()
+- event_tx stored in AppState immediately after EventHandler::new() so keybindings.rs can send async DB results back without extra handle_key() parameters
+- Session UUID shown as first 8 chars in status bar (enough to identify, minimal space)
 - Overlap(1) spacing NOT applied to 80-119 layout (Length(0) + Overlap causes u16 underflow in ratatui layout engine)
 - Scroll-wheel in HelpOverlay mode routes to help_scroll (not focused-panel scroll) for intuitive overlay navigation
 - Phase 3 exit criteria are compiler-enforced (no unsafe, !Send on Repository) plus human visual sign-off — not just test coverage; the compiler's type system is the authoritative thread-safety check for git2
@@ -131,4 +136,5 @@ Execute Phase 4: Persistence Layer (`04-persistence-layer`). Continue with plan 
 | 03-git-layer | 05 | 5min | 2 | 0 |
 | 03-git-layer | 06 | 2min | 3 | 4 |
 | Phase 04-persistence-layer P01 | 3min | 2 tasks | 5 files |
+| 04-persistence-layer | 02 | 4min | 2 | 5 |
 
