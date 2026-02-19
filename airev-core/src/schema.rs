@@ -90,6 +90,14 @@ pub fn migrate(db: &mut rusqlite::Connection) -> rusqlite::Result<()> {
 
     if version < 1 {
         let tx = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        // Drop legacy tables from Phase 1 that have incompatible columns.
+        // Safe: only fires when schema_version is 0 (no versioned data exists).
+        tx.execute_batch(
+            "DROP TABLE IF EXISTS comments;
+             DROP TABLE IF EXISTS file_review_state;
+             DROP TABLE IF EXISTS threads;
+             DROP TABLE IF EXISTS sessions;",
+        )?;
         tx.execute_batch(SCHEMA_V1_SQL)?;
         tx.execute("INSERT INTO schema_version (version) VALUES (1)", [])?;
         tx.commit()?;
