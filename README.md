@@ -1,0 +1,3 @@
+### Warning: Dead project
+While working on this project, I came across this: https://github.com/agavra/tuicr...
+which does exactly what I wanted from from this project 
